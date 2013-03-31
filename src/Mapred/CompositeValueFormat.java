@@ -22,10 +22,6 @@ public class CompositeValueFormat implements Writable {
 			}
 			
 		
-			public float getSentiment()
-			{
-				return this.Sentiment;
-			}
 			
 			public Text getTweet()
 			{
@@ -35,6 +31,21 @@ public class CompositeValueFormat implements Writable {
 				this.Tweet = tw;
 			}
 			
+			public Text getConcerning()
+			{
+				return this.Concerning;
+			}
+			public void setConcerning(Text tw){
+				this.Concerning= tw;
+			}
+			
+
+			
+
+			public float getSentiment()
+			{
+				return this.Sentiment;
+			}
 			public void setSentiment(float s){
 				this.Sentiment = s;
 			}

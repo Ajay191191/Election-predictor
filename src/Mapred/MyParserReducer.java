@@ -84,7 +84,8 @@ public class MyParserReducer extends Reducer<Text, CompositeValueFormat, Text, T
     public static String constructPropertyXml(Text name, CompositeValueFormat value) {
       StringBuilder sb = new StringBuilder();
       sb.append("<Tweet><name>").append(name)
-          .append("</name><Text>").append(value.getTweet())
+          .append("</name><Text Concerning=\"").append(value.getConcerning())
+          .append("\">").append(value.getTweet())
           .append("</Text><Sentiment>").append(value.getSentiment())
           .append("</Sentiment><Certainty>").append(value.getCertainty())
           .append("</Certainty></Tweet>");

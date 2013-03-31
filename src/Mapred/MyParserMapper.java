@@ -3,6 +3,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.StringReader;
 import java.net.URL;
@@ -20,6 +21,10 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.NodeList;
@@ -168,6 +173,7 @@ public class MyParserMapper extends Mapper<LongWritable, Text, Text, CompositeVa
           
           
           String matches[] = context.getConfiguration().get("xmlToSearch").toString().toLowerCase().split("\n");
+          cvf.setConcerning(new Text(matches[0]));
 			for (int i = 0; i < matches.length; i++) {
 				if (propertyText.toLowerCase().contains(matches[i])){
 					URL translate = new URL("http://master/google_translate.php?text="+URLEncoder.encode(propertyText));
@@ -182,9 +188,71 @@ public class MyParserMapper extends Mapper<LongWritable, Text, Text, CompositeVa
 					 JSONObject json = readJsonFromUrl("http://localhost:8604/v1/sentence/"+URLEncoder.encode(translatedText).replaceAll("%23|%3F|%2F", "").replaceAll("http%3A%2F%2F[^ ]+", "")+".json");
 					 
 					 
+					 //Second Sentiment
+					 
+					 String urlParameters = "language=english&text="+translatedText;
+				      String request = "http://text-processing.com/demo/sentiment/";
+				      String reply = new String();
+				      URL url1 = new URL(request);
+				      URLConnection conn = url1.openConnection();
+
+				      conn.setDoOutput(true);
+
+				      OutputStreamWriter writer = new OutputStreamWriter(conn.getOutputStream());
+
+				      writer.write(urlParameters);
+				      writer.flush();
+				      
+				      String line;
+				      BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+
+				      while ((line = reader.readLine()) != null) {
+				    	  reply += line;
+				        //  System.out.println(line);
+//				    	  if(line.contains("large"))
+//				    		  System.out.println(line);
+				      }
+				      
+				      writer.close();
+				      reader.close();     
+				      
+				      Document doc = Jsoup.parse(reply);
+				      float sentiment = 0;
+				      Elements el = doc.getElementsByClass("span-9");
+				      for(Element e : el){
+//				    	  System.out.println(e.getElementsByClass("positive").text());
+//				    	  System.out.println(e.getElementsByClass("negative").text());
+
+				    	  String sp[]= e.getElementsByClass("positive").text().split(" ");
+				    	  if(sp.length==1)
+				    		  continue;
+				    	  if(sp.length != 2){
+				    		  sentiment = Float.parseFloat(e.getElementsByClass("positive").text().split(":")[1].trim()) * 5;
+				    	  }else{
+				    		  sentiment = (-1) * Float.parseFloat(e.getElementsByClass("negative").text().split(":")[1].trim()) * 5;
+				    	  }
+				    	  
+				      }
+				      System.out.println(sentiment+"");
+				      float finalSentiment;
+				      float jsonSentiment = Float.parseFloat(json.get("sentiment").toString());
+				      if(jsonSentiment==0){
+				    	  finalSentiment = sentiment;
+				      }
+				      else if(sentiment == 0){
+				    	  finalSentiment = jsonSentiment;
+				      }
+				      else if((jsonSentiment-sentiment) <= 5){
+				    	  finalSentiment = (sentiment + jsonSentiment )/2;
+				      }
+				      else{
+				    	  finalSentiment = (sentiment + jsonSentiment);
+				      }
+
+					 
 					 
 					cvf.setTweet(new Text(propertyText));
-					 cvf.setSentiment(Float.parseFloat(json.get("sentiment").toString()));
+					 cvf.setSentiment(finalSentiment);
 					 cvf.setCertainty(Float.parseFloat(json.get("certainty").toString()));
 					context.write(new Text(propertyScreenName.trim()),cvf);
 				}
