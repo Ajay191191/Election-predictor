@@ -43,7 +43,7 @@ public class SearchByFacet {
 		job.setJarByClass(SearchByFacet.class);
 
 		job.setOutputKeyClass(Text.class);
-		job.setOutputValueClass(Text.class);
+		job.setOutputValueClass(CompositeValueFormat.class);
 
 		job.setMapperClass(MyParserMapper.class);
 		job.setReducerClass(MyParserReducer.class);

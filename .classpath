@@ -58,5 +58,6 @@
 	<classpathentry kind="lib" path="/home/ajay/HadoopLib/hadoop-test-1.1.1.jar"/>
 	<classpathentry kind="lib" path="/home/ajay/HadoopLib/hadoop-tools-1.1.1.jar"/>
 	<classpathentry kind="lib" path="/home/ajay/HadoopLib/jdom-2.0.4.jar"/>
+	<classpathentry kind="lib" path="/home/ajay/HadoopLib/java-json.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

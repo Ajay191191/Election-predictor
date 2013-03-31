@@ -13,67 +13,38 @@ public class SeperateTweet {
 	}
 
 	public static void runJob(String input, String output, String start,
-			String end,String el) throws Exception {
-		 Configuration conf = new Configuration();
-		 conf.set("key.value.separator.in.input.line", " ");
-		 // conf.set("xmlinput.start", "<text type=\"string\">");
-		 // conf.set("xmlinput.end", "</text>");
-		 conf.set("xmlinput.start", start);
-		 conf.set("xmlinput.end", end);
-		 conf.set("xmlToSearch",el);
-		 conf.setLong("mapreduce.max.split.size", 67108864);
-		 conf.setLong("mapreduce.input.fileinputformat.split.maxsize",67108864);
-		 
-		 
-		 Job job = new Job(conf);
-		 job.setJarByClass(SeperateTweet.class);
-		
-		
-		 
-		 
-		 
-		 job.setOutputKeyClass(Text.class);
-		 job.setOutputValueClass(Text.class);
-		
-		
-		 job.setMapperClass(MyParserMapper.class);
-		 job.setReducerClass(MyParserReducer.class);
-		 
-		 //job.setNumReduceTasks(0);
-		 
-		
-		 job.setInputFormatClass(XmlInputFormatCombine.class);
-		 job.setOutputFormatClass(TextOutputFormat.class);
-		
-		
-		 FileInputFormat.setInputPaths(job, new Path(input));
-		 Path outPath = new Path(output);
-		 FileOutputFormat.setOutputPath(job, outPath);
-		 outPath.getFileSystem(conf).delete(outPath, true);
-		
-		 job.waitForCompletion(true);
+			String end, String el) throws Exception {
+		Configuration conf = new Configuration();
+		conf.set("key.value.separator.in.input.line", " ");
+		// conf.set("xmlinput.start", "<text type=\"string\">");
+		// conf.set("xmlinput.end", "</text>");
+		conf.set("xmlinput.start", start);
+		conf.set("xmlinput.end", end);
+		conf.set("xmlToSearch", el);
+		conf.setLong("mapreduce.max.split.size", 67108864);
+		conf.setLong("mapreduce.input.fileinputformat.split.maxsize", 67108864);
 
-//		JobConf conf = new JobConf(SeperateTweet.class);
-//		conf.setJobName("Max temperature");
-//
-//		conf.set("key.value.separator.in.input.line", " ");
-//		// conf.set("xmlinput.start", "<text type=\"string\">");
-//		// conf.set("xmlinput.end", "</text>");
-//		conf.set("xmlinput.start", start);
-//		conf.set("xmlinput.end", end);
-//
-//		FileInputFormat.addInputPath(conf, new Path(input));
-//		FileOutputFormat.setOutputPath(conf, new Path(output));
-//
-//		conf.setMapperClass(MyParserMapper.class);
-//		conf.setReducerClass(MyParserReducer.class);
-//		
-//		conf.setInputFormat(XmlInputFormat.class);
-//
-//		conf.setOutputKeyClass(Text.class);
-//		conf.setOutputValueClass(IntWritable.class);
-//
-//		JobClient.runJob(conf);
+		Job job = new Job(conf);
+		job.setJarByClass(SearchByFacet.class);
+
+		job.setOutputKeyClass(Text.class);
+		job.setOutputValueClass(CompositeValueFormat.class);
+
+		job.setMapperClass(MyParserMapper.class);
+		job.setReducerClass(MyParserReducer.class);
+
+		// job.setNumReduceTasks(0);
+
+		job.setInputFormatClass(XmlInputFormatCombine.class);
+		job.setOutputFormatClass(TextOutputFormat.class);
+
+		FileInputFormat.setInputPaths(job, new Path(input));
+		Path outPath = new Path(output);
+//		Path outPath = new Path("output-"+el.split("\n")[1]);
+		FileOutputFormat.setOutputPath(job, outPath);
+		outPath.getFileSystem(conf).delete(outPath, true);
+
+		job.waitForCompletion(true);
 
 	}
 }

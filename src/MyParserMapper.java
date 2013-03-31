@@ -1,28 +1,26 @@
-import static javax.xml.stream.XMLStreamConstants.CHARACTERS;
-import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
-import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
-
-import java.io.ByteArrayInputStream;
-import java.io.File;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.io.StringReader;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLEncoder;
+import java.nio.charset.Charset;
 
-import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamReader;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.OutputCollector;
-import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapreduce.Mapper;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
@@ -31,7 +29,7 @@ import org.xml.sax.InputSource;
  *
  * @author root
  */
-public class MyParserMapper extends Mapper<LongWritable, Text, Text, Text> {
+public class MyParserMapper extends Mapper<LongWritable, Text, Text, CompositeValueFormat> {
 
 
 	
@@ -108,6 +106,10 @@ public class MyParserMapper extends Mapper<LongWritable, Text, Text, Text> {
                        Context context)
         throws
         IOException, InterruptedException {
+		
+
+
+		
       String document = value.toString();
       DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();
      // System.out.println("'" + document + "'");
@@ -151,7 +153,7 @@ public class MyParserMapper extends Mapper<LongWritable, Text, Text, Text> {
 //        else
 //        	context.write(new Text(propertyName.trim()),new Text(""));
     	  
-    	  
+    	  CompositeValueFormat cvf = new CompositeValueFormat();
     	  //WithXPath
           InputSource dDoc = new InputSource(new StringReader(document));
           XPath xPath = XPathFactory.newInstance().newXPath();
@@ -161,16 +163,57 @@ public class MyParserMapper extends Mapper<LongWritable, Text, Text, Text> {
           dDoc = new InputSource(new StringReader(document));
           nl = (NodeList) xPath.evaluate("o/user/screen_name", dDoc, XPathConstants.NODESET);
           propertyScreenName = nl.item(0).getTextContent();
+          
+          
+          
           String matches[] = context.getConfiguration().get("xmlToSearch").toString().toLowerCase().split("\n");
 			for (int i = 0; i < matches.length; i++) {
-				if (propertyText.toLowerCase().contains(matches[i]))
-					context.write(new Text(propertyScreenName.trim()),
-							new Text(propertyText.trim()));
+				if (propertyText.toLowerCase().contains(matches[i])){
+					URL translate = new URL("http://master/google_translate.php?text="+URLEncoder.encode(propertyText));
+				      URLConnection yc = translate.openConnection();
+				      BufferedReader in = new BufferedReader(new InputStreamReader(yc.getInputStream()));
+					String translatedText ,inputLine;
+					translatedText=new String();
+					 while ((inputLine = in.readLine()) != null) 
+				          translatedText += inputLine;
+				      in.close();
+					//curl -X GET -g "http://localhost:8080/v1/sentence/fantastic.json
+					 JSONObject json = readJsonFromUrl("http://localhost:8604/v1/sentence/"+URLEncoder.encode(translatedText).replaceAll("%23|%3F|%2F", "").replaceAll("http%3A%2F%2F[^ ]+", "")+".json");
+					 
+					 
+					 
+					cvf.setTweet(new Text(propertyText));
+					 cvf.setSentiment(Float.parseFloat(json.get("sentiment").toString()));
+					 cvf.setCertainty(Float.parseFloat(json.get("certainty").toString()));
+					context.write(new Text(propertyScreenName.trim()),cvf);
+				}
 				else
-					context.write(new Text(""), new Text(""));
+					context.write(new Text(""), new CompositeValueFormat());
 			}
       } catch (Exception e) {
         log.error("Error processing '" + document + "'", e);
       }
     }
+	
+	public static JSONObject readJsonFromUrl(String url) throws IOException, JSONException {
+	    InputStream is = new URL(url).openStream();
+	    try {
+	      BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
+	      String jsonText = readAll(rd);
+	      JSONObject json = new JSONObject(jsonText);
+	      return json;
+	    } finally {
+	      is.close();
+	    }
+	  }
+	
+	private static String readAll(Reader rd) throws IOException {
+	    StringBuilder sb = new StringBuilder();
+	    int cp;
+	    while ((cp = rd.read()) != -1) {
+	      sb.append((char) cp);
+	    }
+	    return sb.toString();
+	  }
+	
 }

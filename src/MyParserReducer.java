@@ -7,7 +7,7 @@ import org.apache.hadoop.mapreduce.Reducer;
 
 
 
-public class MyParserReducer extends Reducer<Text, Text, Text, Text>{
+public class MyParserReducer extends Reducer<Text, CompositeValueFormat, Text, Text>{
 
 	
 	
@@ -60,7 +60,7 @@ public class MyParserReducer extends Reducer<Text, Text, Text, Text>{
     protected void setup(
         Context context)
         throws IOException, InterruptedException {
-      context.write(new Text("<All>"), null);
+      context.write(new Text("<?xml version=\"1.0\" encoding=\"UTF-8\"?> <All>"), null);
     }
 
     @Override
@@ -71,20 +71,22 @@ public class MyParserReducer extends Reducer<Text, Text, Text, Text>{
     }
 
     private Text outputKey = new Text();
-    public void reduce(Text key, Iterable<Text> values,
+    public void reduce(Text key, Iterable<CompositeValueFormat> values,
                        Context context)
         throws IOException, InterruptedException {
-      for (Text value : values) {
+      for (CompositeValueFormat value : values) {
         outputKey.set(constructPropertyXml(key, value));
         context.write(outputKey, null);
       }
     }
 
-    public static String constructPropertyXml(Text name, Text value) {
+    public static String constructPropertyXml(Text name, CompositeValueFormat value) {
       StringBuilder sb = new StringBuilder();
       sb.append("<Tweet><name>").append(name)
-          .append("</name><Text>").append(value)
-          .append("</Text></Tweet>");
+          .append("</name><Text>").append(value.getTweet())
+          .append("</Text><Sentiment>").append(value.getSentiment())
+          .append("</Sentiment><Certainty>").append(value.getCertainty())
+          .append("</Certainty></Tweet>");
       return sb.toString();
     }
 	
