@@ -15,10 +15,10 @@ public class CompositeValueFormat implements Writable {
 			
 			
 			public CompositeValueFormat(){
-				this.Tweet = new Text();
-				this.Sentiment = new Text();
+				this.Tweet = new Text("");
+				this.Sentiment = new Text("");
 				this.certainty = 0.0f;
-				this.Concerning = new Text();
+				this.Concerning = new Text("");
 			}
 			
 		
@@ -35,6 +35,7 @@ public class CompositeValueFormat implements Writable {
 			{
 				return this.Concerning;
 			}
+			
 			public void setConcerning(Text tw){
 				this.Concerning= tw;
 			}
@@ -47,7 +48,7 @@ public class CompositeValueFormat implements Writable {
 				return this.Sentiment;
 			}
 			public void setSentiment(Text s){
-				this.Sentiment = new Text(s);
+				this.Sentiment = s;
 			}
 			
 			public void setCertainty(float certainty){
@@ -63,6 +64,7 @@ public class CompositeValueFormat implements Writable {
 				this.Tweet = new Text(in.readUTF());
 				this.Sentiment = new Text(in.readUTF());
 				this.certainty = in.readFloat();
+				this.Concerning = new Text(in.readUTF());
 				
 			}
 			@Override
@@ -70,6 +72,6 @@ public class CompositeValueFormat implements Writable {
 				out.writeUTF(this.Tweet.toString());
 				out.writeUTF(this.Sentiment.toString());
 				out.writeFloat(this.certainty);
-				
+				out.writeUTF(this.Concerning.toString());
 			}
 }

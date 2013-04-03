@@ -9,7 +9,7 @@ import java.io.OutputStream;
 
 public class XMLConcat {
     public static void main(String[] args) throws Throwable {
-        File dir = new File("/home/ajay/Project/Tweets/");
+        File dir = new File("/home/ajay/Project/From-Hadoop/");
         File[] rootFiles = dir.listFiles();
 
 //        Writer outputWriter = new FileWriter("/home/ajay/Project/mergedFile.xml");
@@ -82,7 +82,7 @@ public class XMLConcat {
     	try{
     		int x=0;
     		System.out.println(rootFiles.length + ":Length");
-    		OutputStream outputStream = new BufferedOutputStream(new FileOutputStream("/media/E48C7B648C7B3062/merged.xml"));
+    		OutputStream outputStream = new BufferedOutputStream(new FileOutputStream("/home/ajay/Project/erged.xml"));
     	for (File filename : rootFiles) {
     		//System.out.println(filename.toString());
     	    InputStream inputStream = new BufferedInputStream(new FileInputStream(filename));

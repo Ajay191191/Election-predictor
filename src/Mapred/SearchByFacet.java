@@ -49,14 +49,14 @@ public class SearchByFacet {
 		job.setMapperClass(MyParserMapper.class);
 		job.setReducerClass(MyParserReducer.class);
 
-		// job.setNumReduceTasks(0);
+		job.setNumReduceTasks(1);
 
 		job.setInputFormatClass(XmlInputFormatCombine.class);
 		job.setOutputFormatClass(TextOutputFormat.class);
 
 		FileInputFormat.setInputPaths(job, new Path(input));
 //		Path outPath = new Path(output);
-		Path outPath = new Path("output-"+el.split("\n")[1]);
+		Path outPath = new Path(output+"-"+el.split("\n")[1]);
 		FileOutputFormat.setOutputPath(job, outPath);
 		outPath.getFileSystem(conf).delete(outPath, true);
 

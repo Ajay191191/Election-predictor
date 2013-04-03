@@ -2,10 +2,12 @@ package Test;
 
 
 import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.StringReader;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
@@ -15,20 +17,38 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathFactory;
+
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.python.core.PyObject;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
 
 public class Translate {
 
 	
 
 	public static void main(String[] args) throws Exception {
-		String ur = URLEncoder
-				.encode("RT @GliIntoccabili: #ariachetira #la7 @SenatoreMonti �quella frase del presidente #Berlusconi inizia con 'io prometto' quindi inutile as ...")
-				.replaceAll("%23|%3F|%2F|\"", "");
 		
-		System.out.println(ur);
+		BufferedReader bR = new BufferedReader(new FileReader("/home/ajay/Project/306819847717806082.xml"));
+		String document = new String(),ss;
+		while((ss=bR.readLine())!=null){
+			document += ss;
+		}
+		String ur = URLEncoder
+				.encode("@insopportabile Vabb, se  per questo c' gente che chiede a Bersani di vincere le elezioni. A Bersani.");
+//				.replaceAll("%23|%3F|%2F|\"", "").replaceAll("\"|\\r|\\n|[^\\x00-\\x7F]", "");
+		
+		InputSource dDoc = new InputSource(new StringReader(document));
+		XPath xPath = XPathFactory.newInstance().newXPath();
+		NodeList nl = (NodeList) xPath.evaluate("o/text", dDoc,
+				XPathConstants.NODESET);
+//		String ur = nl.item(0).getTextContent().replaceAll("\"|\\r|\\n|[^\\x00-\\x7F]", "");
+	
+		
+		//System.out.println(ur);
 		 URL translate = new URL("http",
 		 "localhost","/google_translate.php?text=" + ur);
 		 URLConnection yc = translate.openConnection();
@@ -169,7 +189,8 @@ public class Translate {
 		List<String> l = new ArrayList<String>();
 		l.add("python");
 		l.add("/home/hduser/twitter/translate.py");
-		l.add("\"" + translatedText +"\"");
+		//translatedText = "@ unbearable VABB , for that c ' people asking Bersani to win the election . ".replaceAll("[^\\x00-\\x7F]", ""); 
+		l.add("\"" +translatedText+"\"");
 		System.out.println(l);
 		ProcessBuilder b = new ProcessBuilder(l);
 		Process p = b.start();

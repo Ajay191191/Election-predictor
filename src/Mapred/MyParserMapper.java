@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
+
 /**
  * 
  * @author root
@@ -37,140 +38,26 @@ public class MyParserMapper extends
 	private static final Logger log = LoggerFactory
 			.getLogger(MyParserMapper.class);
 
-	//
-	// @Override
-	// public void map(LongWritable key, Text value1,Context context)
-	//
-	// throws IOException, InterruptedException {
-	// String xmlString = value1.toString();
-	//
-	// SAXBuilder builder = new SAXBuilder();
-	// Reader in = new StringReader(xmlString);
-	// String value="";
-	// try {
-	//
-	// Document doc = builder.build(in);
-	// Element root = doc.getRootElement();
-	//
-	// String tag1 =root.getChild("tag").getChild("tag1").getTextTrim() ;
-	//
-	// String tag2
-	// =root.getChild("tag").getChild("tag1").getChild("tag2").getTextTrim();
-	// value= tag1+ ","+tag2;
-	// context.write(new Text("text"), new Text(value));
-	// } catch (JDOMException ex) {
-	// Logger.getLogger(MyParserMapper.class.getName()).log(Level.SEVERE, null,
-	// ex);
-	// } catch (IOException ex) {
-	// Logger.getLogger(MyParserMapper.class.getName()).log(Level.SEVERE, null,
-	// ex);
-	// }
-	//
-	//
-	//
-	//
-	// }
-
-	// @Override
-	// public void map(LongWritable key, Text value1,
-	// OutputCollector<Text, Text> output, Reporter reporter) throws IOException
-	// {
-	// // TODO Auto-generated method stub
-	// String document = value1.toString();
-	// System.out.println("'" + document + "'");
-	// try {
-	// XMLStreamReader reader =
-	// XMLInputFactory.newInstance().createXMLStreamReader(new
-	// ByteArrayInputStream(document.getBytes()));
-	// String propertyName = "";
-	// String propertyValue = "";
-	// String currentElement = "";
-	// while (reader.hasNext()) {
-	// int code = reader.next();
-	// switch (code) {
-	// case START_ELEMENT:
-	// currentElement = reader.getLocalName();
-	// break;
-	// case CHARACTERS:
-	// if (currentElement.equalsIgnoreCase("screen_name")) {
-	// propertyName += reader.getText();
-	// } else if (currentElement.equalsIgnoreCase("text")) {
-	// propertyValue += reader.getText();
-	// }
-	// break;
-	// }
-	// }
-	// reader.close();
-	// output.collect(new Text(propertyName.trim()),new
-	// Text(propertyValue.trim()));
-	// } catch (Exception e) {
-	// log.error("Error processing '" + document + "'", e);
-	// }
-	// }
-
 	@Override
 	protected void map(LongWritable key, Text value, Context context)
 			throws IOException, InterruptedException {
 
 		String document = value.toString();
-		DocumentBuilderFactory domFactory = DocumentBuilderFactory
-				.newInstance();
-		// System.out.println("'" + document + "'");
 		try {
+			
+			
+			XPath xPath = XPathFactory.newInstance().newXPath();;
 
-			// With XMLStreamReader
-			// XMLStreamReader reader =
-			// XMLInputFactory.newInstance().createXMLStreamReader(new
-			// ByteArrayInputStream(document.getBytes()));
 			String propertyScreenName = "";
 			String propertyText = "";
 			NodeList nl;
-			// String currentElement = "";
-			// String previousElement = "o/";
-			// while (reader.hasNext()) {
-			// int code = reader.next();
-			// switch (code) {
-			// case START_ELEMENT:
-			// currentElement = reader.getLocalName();
-			// previousElement.concat(currentElement+"/");
-			// previousElement += currentElement+"/";
-			// // System.out.println("CurrentElement: " + currentElement);
-			// // System.out.println("PreviousElement_Start: " +
-			// previousElement);
-			// break;
-			// case END_ELEMENT:
-			// // System.out.println("PreviousElement: " + previousElement);
-			// previousElement.replaceAll(currentElement+"/", "");
-			//
-			// break;
-			// case CHARACTERS:
-			//
-			// if (currentElement.equalsIgnoreCase("screen_name") &&
-			// previousElement.equalsIgnoreCase("o/user/")) {
-			// propertyName += reader.getText();
-			// } else if (currentElement.equalsIgnoreCase("text") &&
-			// previousElement.equalsIgnoreCase("o/")) {
-			// propertyValue += reader.getText();
-			// }
-			// break;
-			// }
-			// }
-			// reader.close();
-			// if(propertyValue.toLowerCase().contains(context.getConfiguration().get("xmlToSearch").toString().toLowerCase()))
-			// context.write(new Text(propertyName.trim()),new
-			// Text(propertyValue.trim()));
-			// else
-			// context.write(new Text(propertyName.trim()),new Text(""));
-
+			boolean found = false;
 			CompositeValueFormat cvf = new CompositeValueFormat();
-			// WithXPath
 			InputSource dDoc = new InputSource(new StringReader(document));
-			XPath xPath = XPathFactory.newInstance().newXPath();
 			nl = (NodeList) xPath.evaluate("o/text", dDoc,
 					XPathConstants.NODESET);
-			// System.out.println("Text : " + nl.item(0).getTextContent());
-			propertyText = nl.item(0).getTextContent().replaceAll("\"", "");
-			System.out.println("Text: "  + propertyText);
+			propertyText = nl.item(0).getTextContent()
+					.replaceAll("\"|\\r|\\n|[^\\x00-\\x7F]", "");
 			dDoc = new InputSource(new StringReader(document));
 			nl = (NodeList) xPath.evaluate("o/user/screen_name", dDoc,
 					XPathConstants.NODESET);
@@ -180,68 +67,75 @@ public class MyParserMapper extends
 					.toString().toLowerCase().split("\n");
 			cvf.setConcerning(new Text(matches[0]));
 			for (int i = 0; i < matches.length; i++) {
-				if (propertyText.toLowerCase().contains(matches[i])) {
-					propertyText.replaceAll("","");
-					URL translate = new URL(
-							"http://master/google_translate.php?text="
-									+ URLEncoder.encode(propertyText));
-					URLConnection yc = translate.openConnection();
-					BufferedReader in = new BufferedReader(
-							new InputStreamReader(yc.getInputStream()));
-					String translatedText, inputLine;
-					translatedText = new String();
-					while ((inputLine = in.readLine()) != null)
-						translatedText += inputLine;
-					in.close();
-					System.out.println("Translated : " + translatedText);
-					// curl -X GET -g
-					// "http://localhost:8080/v1/sentence/fantastic.json
-					JSONObject json = readJsonFromUrl("http://master:8604/v1/sentence/"
-							+ URLEncoder.encode(translatedText)
-									.replaceAll("%23|%3F|%2F", "")
-									.replaceAll("http%3A%2F%2F[^ ]+", "")
-							+ ".json");
-
-					// Second Sentiment
-					
-					List<String> l = new ArrayList<String>();
-					l.add("python");
-					l.add("/home/hduser/twitter/translate.py");
-					l.add("\"" + translatedText +"\"");
-					System.out.println("List : " + l);
-					ProcessBuilder b = new ProcessBuilder(l);
-					Process p = b.start();
-					BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
-					String s;
-					// read the output
-					s = stdInput.readLine();
-					System.out.println("S = " +s );
-					
-						String arr[]=s.split(":");
-						String arr1[] = arr[arr.length-1].split("}");
-						//System.out.println(arr1[0]);
-					
-					String secondsentiment =arr1[0];
-					
-					String finalSentiment=new String();
-					float jsonSentiment = Float.parseFloat(json
-							.get("sentiment").toString());
-					if(secondsentiment.equals("\'neutral\'"))
-						if(jsonSentiment<=0) finalSentiment = "positive";
-						else finalSentiment = "negative";
-					if(secondsentiment.equals("\'positive\'"))	
-						finalSentiment = "positive";			
-					if(secondsentiment.equals("\'negative\'"))
-						finalSentiment = "negative";
-					
-					cvf.setTweet(new Text(propertyText));
-					cvf.setSentiment(new Text(finalSentiment));
-					cvf.setCertainty(Float.parseFloat(json.get("certainty")
-							.toString()));
-					context.write(new Text(propertyScreenName.trim()), cvf);
-				} else
-					context.write(new Text(""), new CompositeValueFormat());
+				String spl[] = matches[i].split(" ");
+				for(int j = 0;j<spl.length;j++)
+				if (propertyText.toLowerCase().contains(spl[j])) {
+					found = true;
+				} 
 			}
+			if (found) {
+				propertyText.replaceAll("", "");
+				URL translate = new URL(
+						"http://master/google_translate.php?text="
+								+ URLEncoder.encode(propertyText));
+				URLConnection yc = translate.openConnection();
+				BufferedReader in = new BufferedReader(new InputStreamReader(
+						yc.getInputStream()));
+				String translatedText, inputLine;
+				translatedText = new String();
+				while ((inputLine = in.readLine()) != null)
+					translatedText += inputLine;
+				in.close();
+				JSONObject json = readJsonFromUrl("http://master:8604/v1/sentence/"
+						+ URLEncoder.encode(translatedText)
+								.replaceAll("%23|%3F|%2F", "")
+								.replaceAll("http%3A%2F%2F[^ ]+", "") + ".json");
+				List<String> l = new ArrayList<String>();
+				l.add("python");
+				l.add("/home/hduser/twitter/translate.py");
+				l.add("\"" + translatedText.replaceAll("[^\\x00-\\x7F]", "") + "\"");
+				String s;
+				String secondsentiment = new String();
+				ProcessBuilder b = new ProcessBuilder(l);
+				int count = 0;
+				while(count <= 10){
+				Process p = b.start();
+				BufferedReader stdInput = new BufferedReader(
+						new InputStreamReader(p.getInputStream()));
+				
+				s = stdInput.readLine();
+				if(s == null){
+					System.out.println("Failed : " + translatedText.replaceAll("[^\\x00-\\x7F]", "") + "Original:" + propertyText);
+					count++;
+					continue;
+				}
+				String arr[] = s.split(":");
+				String arr1[] = arr[arr.length - 1].split("}");
+				secondsentiment = arr1[0];
+				break;
+				}
+				String finalSentiment = new String();
+				float jsonSentiment = Float.parseFloat(json.get("sentiment")
+						.toString());
+				if (secondsentiment.trim().equals("\'neutral\'"))
+					if (jsonSentiment >= 0)
+						finalSentiment = new String("positive");
+					else if(jsonSentiment <=0)
+						finalSentiment = new String("negative");
+					else
+						finalSentiment = new String("neutral");
+				if (secondsentiment.trim().equals("\'positive\'"))
+					finalSentiment = new String("positive");
+				if (secondsentiment.trim().equals("\'negative\'"))
+					finalSentiment = new String("negative");
+				cvf.setTweet(new Text(propertyText));
+				cvf.setSentiment(new Text(finalSentiment));
+				cvf.setCertainty(Float.parseFloat(json.get("certainty")
+						.toString()));
+				context.write(new Text(propertyScreenName.trim()), cvf);
+			}else
+				context.write(new Text(""), new CompositeValueFormat());
+
 		} catch (Exception e) {
 			log.error("Error processing '" + document + "'", e);
 		}
@@ -249,7 +143,6 @@ public class MyParserMapper extends
 
 	public static JSONObject readJsonFromUrl(String url) throws IOException,
 			JSONException {
-		System.out.println(url);
 		InputStream is = new URL(url).openStream();
 		try {
 			BufferedReader rd = new BufferedReader(new InputStreamReader(is,

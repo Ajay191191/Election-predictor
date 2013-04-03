@@ -34,7 +34,7 @@ public class SeperateTweet {
 		job.setMapperClass(MyParserMapper.class);
 		job.setReducerClass(MyParserReducer.class);
 
-		// job.setNumReduceTasks(0);
+	    job.setNumReduceTasks(1);
 
 		job.setInputFormatClass(XmlInputFormatCombine.class);
 		job.setOutputFormatClass(TextOutputFormat.class);
