@@ -49,18 +49,26 @@ public class Translate {
 	
 		
 		//System.out.println(ur);
+		boolean translated = false;
 		 URL translate = new URL("http",
 		 "localhost","/google_translate.php?text=" + ur);
-		 URLConnection yc = translate.openConnection();
-		 BufferedReader in = new BufferedReader(new InputStreamReader(
-		 yc.getInputStream()));
+		 BufferedReader in = null ;
 		 String translatedText, inputLine;
 		 translatedText = new String();
+		 int count = 0;
+		 while(count<=10){
+		 URLConnection yc = translate.openConnection();
+		 in = new BufferedReader(new InputStreamReader(yc.getInputStream()));
+		 
+		 
 		 while ((inputLine = in.readLine()) != null) {
-		 translatedText += inputLine;
+			 translated=true;
+			 count++;
+			 translatedText += inputLine;
 		 }
-		 System.out.println(translatedText);
-		
+		 if(translated)
+			 break;
+		 }
 		 String urlString = URLEncoder
 		 .encode("This is a url http://url.com/?asd=asdasdasd%23");
 		 System.out.println(urlString
@@ -189,12 +197,16 @@ public class Translate {
 		List<String> l = new ArrayList<String>();
 		l.add("python");
 		l.add("/home/hduser/twitter/translate.py");
-		//translatedText = "@ unbearable VABB , for that c ' people asking Bersani to win the election . ".replaceAll("[^\\x00-\\x7F]", ""); 
+		translatedText = "# # Bersani wants commissioned by Napolitano otherwise new elections with him leader # pd SAY ' A LEADER THAT IS NOT' BEEN VOTED by villagers !".replaceAll("[^\\x00-\\x7F]", ""); 
 		l.add("\"" +translatedText+"\"");
 		System.out.println(l);
 		ProcessBuilder b = new ProcessBuilder(l);
 		Process p = b.start();
 		BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
+		BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+		String s2;
+		while((s2=stdError.readLine())!=null)
+			System.out.println(s2);
 		String s1 ;
 		// read the output
 

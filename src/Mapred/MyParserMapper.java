@@ -44,9 +44,9 @@ public class MyParserMapper extends
 
 		String document = value.toString();
 		try {
-			
-			
-			XPath xPath = XPathFactory.newInstance().newXPath();;
+
+			XPath xPath = XPathFactory.newInstance().newXPath();
+			;
 
 			String propertyScreenName = "";
 			String propertyText = "";
@@ -68,23 +68,33 @@ public class MyParserMapper extends
 			cvf.setConcerning(new Text(matches[0]));
 			for (int i = 0; i < matches.length; i++) {
 				String spl[] = matches[i].split(" ");
-				for(int j = 0;j<spl.length;j++)
-				if (propertyText.toLowerCase().contains(spl[j])) {
-					found = true;
-				} 
+				for (int j = 0; j < spl.length; j++)
+					if (propertyText.toLowerCase().contains(spl[j])) {
+						found = true;
+					}
 			}
 			if (found) {
 				propertyText.replaceAll("", "");
+				boolean translated = false;
+				BufferedReader in = null;
+				String translatedText, inputLine;
+				translatedText = new String();
+				int countG = 0;
 				URL translate = new URL(
 						"http://master/google_translate.php?text="
 								+ URLEncoder.encode(propertyText));
-				URLConnection yc = translate.openConnection();
-				BufferedReader in = new BufferedReader(new InputStreamReader(
-						yc.getInputStream()));
-				String translatedText, inputLine;
-				translatedText = new String();
-				while ((inputLine = in.readLine()) != null)
-					translatedText += inputLine;
+				while (countG <= 10) {
+					URLConnection yc = translate.openConnection();
+					in = new BufferedReader(new InputStreamReader(
+							yc.getInputStream()));
+					while ((inputLine = in.readLine()) != null) {
+						translated = true;
+						countG++;
+						translatedText += inputLine;
+					}
+					if (translated)
+						break;
+				}
 				in.close();
 				JSONObject json = readJsonFromUrl("http://master:8604/v1/sentence/"
 						+ URLEncoder.encode(translatedText)
@@ -93,26 +103,33 @@ public class MyParserMapper extends
 				List<String> l = new ArrayList<String>();
 				l.add("python");
 				l.add("/home/hduser/twitter/translate.py");
-				l.add("\"" + translatedText.replaceAll("[^\\x00-\\x7F]", "") + "\"");
+				l.add("\"" + translatedText.replaceAll("[^\\x00-\\x7F]", "")
+						+ "\"");
 				String s;
 				String secondsentiment = new String();
 				ProcessBuilder b = new ProcessBuilder(l);
 				int count = 0;
-				while(count <= 10){
-				Process p = b.start();
-				BufferedReader stdInput = new BufferedReader(
-						new InputStreamReader(p.getInputStream()));
-				
-				s = stdInput.readLine();
-				if(s == null){
-					System.out.println("Failed : " + translatedText.replaceAll("[^\\x00-\\x7F]", "") + "Original:" + propertyText);
-					count++;
-					continue;
-				}
-				String arr[] = s.split(":");
-				String arr1[] = arr[arr.length - 1].split("}");
-				secondsentiment = arr1[0];
-				break;
+				while (count <= 10) {
+					Process p = b.start();
+					BufferedReader stdInput = new BufferedReader(
+							new InputStreamReader(p.getInputStream()));
+					BufferedReader stdError = new BufferedReader(
+							new InputStreamReader(p.getErrorStream()));
+					s = stdInput.readLine();
+					if (s == null) {
+						System.out.println("Failed : "
+								+ translatedText.replaceAll("[^\\x00-\\x7F]",
+										"") + "Original:" + propertyText);
+						count++;
+						String s2;
+						while ((s2 = stdError.readLine()) != null)
+							System.out.println(s2);
+						continue;
+					}
+					String arr[] = s.split(":");
+					String arr1[] = arr[arr.length - 1].split("}");
+					secondsentiment = arr1[0];
+					break;
 				}
 				String finalSentiment = new String();
 				float jsonSentiment = Float.parseFloat(json.get("sentiment")
@@ -120,7 +137,7 @@ public class MyParserMapper extends
 				if (secondsentiment.trim().equals("\'neutral\'"))
 					if (jsonSentiment >= 0)
 						finalSentiment = new String("positive");
-					else if(jsonSentiment <=0)
+					else if (jsonSentiment <= 0)
 						finalSentiment = new String("negative");
 					else
 						finalSentiment = new String("neutral");
@@ -133,7 +150,7 @@ public class MyParserMapper extends
 				cvf.setCertainty(Float.parseFloat(json.get("certainty")
 						.toString()));
 				context.write(new Text(propertyScreenName.trim()), cvf);
-			}else
+			} else
 				context.write(new Text(""), new CompositeValueFormat());
 
 		} catch (Exception e) {
