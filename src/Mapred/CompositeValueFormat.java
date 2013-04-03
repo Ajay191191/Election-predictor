@@ -9,14 +9,14 @@ import org.apache.hadoop.io.Writable;
 
 public class CompositeValueFormat implements Writable {
 			private Text Tweet;
-			private float Sentiment;
+			private Text Sentiment;
 			private float certainty;
 			private Text Concerning;
 			
 			
 			public CompositeValueFormat(){
 				this.Tweet = new Text();
-				this.Sentiment = 0;
+				this.Sentiment = new Text();
 				this.certainty = 0.0f;
 				this.Concerning = new Text();
 			}
@@ -42,12 +42,12 @@ public class CompositeValueFormat implements Writable {
 
 			
 
-			public float getSentiment()
+			public Text getSentiment()
 			{
 				return this.Sentiment;
 			}
-			public void setSentiment(float s){
-				this.Sentiment = s;
+			public void setSentiment(Text s){
+				this.Sentiment = new Text(s);
 			}
 			
 			public void setCertainty(float certainty){
@@ -61,14 +61,14 @@ public class CompositeValueFormat implements Writable {
 			@Override
 			public void readFields(DataInput in) throws IOException {
 				this.Tweet = new Text(in.readUTF());
-				this.Sentiment = in.readFloat();
+				this.Sentiment = new Text(in.readUTF());
 				this.certainty = in.readFloat();
 				
 			}
 			@Override
 			public void write(DataOutput out) throws IOException {
 				out.writeUTF(this.Tweet.toString());
-				out.writeFloat(this.Sentiment);
+				out.writeUTF(this.Sentiment.toString());
 				out.writeFloat(this.certainty);
 				
 			}

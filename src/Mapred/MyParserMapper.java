@@ -4,13 +4,14 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.StringReader;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
@@ -22,15 +23,10 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
-
 /**
  * 
  * @author root
@@ -173,7 +169,8 @@ public class MyParserMapper extends
 			nl = (NodeList) xPath.evaluate("o/text", dDoc,
 					XPathConstants.NODESET);
 			// System.out.println("Text : " + nl.item(0).getTextContent());
-			propertyText = nl.item(0).getTextContent();
+			propertyText = nl.item(0).getTextContent().replaceAll("\"", "");
+			System.out.println("Text: "  + propertyText);
 			dDoc = new InputSource(new StringReader(document));
 			nl = (NodeList) xPath.evaluate("o/user/screen_name", dDoc,
 					XPathConstants.NODESET);
@@ -184,6 +181,7 @@ public class MyParserMapper extends
 			cvf.setConcerning(new Text(matches[0]));
 			for (int i = 0; i < matches.length; i++) {
 				if (propertyText.toLowerCase().contains(matches[i])) {
+					propertyText.replaceAll("","");
 					URL translate = new URL(
 							"http://master/google_translate.php?text="
 									+ URLEncoder.encode(propertyText));
@@ -195,81 +193,49 @@ public class MyParserMapper extends
 					while ((inputLine = in.readLine()) != null)
 						translatedText += inputLine;
 					in.close();
+					System.out.println("Translated : " + translatedText);
 					// curl -X GET -g
 					// "http://localhost:8080/v1/sentence/fantastic.json
-					JSONObject json = readJsonFromUrl("http://localhost:8604/v1/sentence/"
+					JSONObject json = readJsonFromUrl("http://master:8604/v1/sentence/"
 							+ URLEncoder.encode(translatedText)
 									.replaceAll("%23|%3F|%2F", "")
 									.replaceAll("http%3A%2F%2F[^ ]+", "")
 							+ ".json");
 
 					// Second Sentiment
-
-					String urlParameters = "language=english&text="
-							+ translatedText;
-					String request = "http://text-processing.com/demo/sentiment/";
-					String reply = new String();
-					URL url1 = new URL(request);
-					URLConnection conn = url1.openConnection();
-
-					conn.setDoOutput(true);
-
-					OutputStreamWriter writer = new OutputStreamWriter(
-							conn.getOutputStream());
-
-					writer.write(urlParameters);
-					writer.flush();
-
-					String line, senti = new String();
-					// float neutral, polar, pos, neg;
-					float sentiment = 0;
-					BufferedReader reader = new BufferedReader(
-							new InputStreamReader(conn.getInputStream()));
-					int count = 0;
-					while ((line = reader.readLine()) != null) {
-						count++;
-						if (count == 15) {
-							if (line.contains("positive"))
-								senti = "positive";
-							else if(line.contains("negative"))
-								senti = "negative";
-							else
-								senti = "neutral";
-						}
-						// System.out.println(senti);
-						// if (count == 19)
-						// neutral = Float.parseFloat(line.split(":")[1]);
-
-						// if (count == 22)
-						// polar = Float.parseFloat(line.split(":")[1]);
-
-						if (count == 27 && senti.equals("positive"))
-							sentiment = Float.parseFloat(line.split(":")[1]) * 5;
-						// System.out.println(line);
-
-						if (count == 28 && senti.equals("negative"))
-							sentiment = (-1) * Float.parseFloat(line.split(":")[1]) * 5;
-						// System.out.println(line);
-					}
-
-					writer.close();
-					reader.close();
-
-					float finalSentiment;
+					
+					List<String> l = new ArrayList<String>();
+					l.add("python");
+					l.add("/home/hduser/twitter/translate.py");
+					l.add("\"" + translatedText +"\"");
+					System.out.println("List : " + l);
+					ProcessBuilder b = new ProcessBuilder(l);
+					Process p = b.start();
+					BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
+					String s;
+					// read the output
+					s = stdInput.readLine();
+					System.out.println("S = " +s );
+					
+						String arr[]=s.split(":");
+						String arr1[] = arr[arr.length-1].split("}");
+						//System.out.println(arr1[0]);
+					
+					String secondsentiment =arr1[0];
+					
+					String finalSentiment=new String();
 					float jsonSentiment = Float.parseFloat(json
 							.get("sentiment").toString());
-					if (jsonSentiment == 0) {
-						finalSentiment = sentiment;
-					} else if (sentiment == 0) {
-						finalSentiment = jsonSentiment;
-					} else if ((jsonSentiment - sentiment) <= 5) {
-						finalSentiment = (sentiment + jsonSentiment) / 2;
-					} else {
-						finalSentiment = (sentiment + jsonSentiment);
-					}
-
+					if(secondsentiment.equals("\'neutral\'"))
+						if(jsonSentiment<=0) finalSentiment = "positive";
+						else finalSentiment = "negative";
+					if(secondsentiment.equals("\'positive\'"))	
+						finalSentiment = "positive";			
+					if(secondsentiment.equals("\'negative\'"))
+						finalSentiment = "negative";
+					
 					cvf.setTweet(new Text(propertyText));
-					cvf.setSentiment(finalSentiment);
+					cvf.setSentiment(new Text(finalSentiment));
 					cvf.setCertainty(Float.parseFloat(json.get("certainty")
 							.toString()));
 					context.write(new Text(propertyScreenName.trim()), cvf);
@@ -283,6 +249,7 @@ public class MyParserMapper extends
 
 	public static JSONObject readJsonFromUrl(String url) throws IOException,
 			JSONException {
+		System.out.println(url);
 		InputStream is = new URL(url).openStream();
 		try {
 			BufferedReader rd = new BufferedReader(new InputStreamReader(is,
