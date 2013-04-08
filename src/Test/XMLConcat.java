@@ -12,7 +12,7 @@ import org.apache.commons.io.IOUtils;
 
 public class XMLConcat {
 	public static void main(String[] args) throws Throwable {
-		File dir = new File("/home/ajay/Project/To_Zip/");
+		File dir = new File("/home/ajay/Project/From-Hadoop/");
 		File[] rootFiles = dir.listFiles();
 
 		// Writer outputWriter = new
@@ -90,7 +90,7 @@ public class XMLConcat {
 		try {
 			int x = 0;
 			System.out.println(rootFiles.length + ":Length");
-			OutputStream outputStream = new BufferedOutputStream(new FileOutputStream("/home/ajay/Project/Merged_Custom_Tag.xml"));
+			OutputStream outputStream = new BufferedOutputStream(new FileOutputStream("/home/ajay/Project/Merged_Custom_Tag1.xml"));
 			for (File filename : rootFiles) {
 				// System.out.println(filename.toString());
 				InputStream inputStream = new BufferedInputStream(new FileInputStream(filename));

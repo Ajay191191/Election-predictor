@@ -39,7 +39,6 @@ public class TranslateReducer extends
 
 	List<String> parties, people, hashTags;
 	String matches[];
-	List<String> Parties, People, HashTags;
 	
 
 	@Override
@@ -53,26 +52,14 @@ public class TranslateReducer extends
 				.get("people").toString().toLowerCase().split("\n")));
 		hashTags = new ArrayList<String>(Arrays.asList(context
 				.getConfiguration().get("hashTags").toString().split("\n")));
-		matches = context.getConfiguration().get("xmlToSearch").toString()
-				.toLowerCase().toLowerCase().split("\n");
-
+		matches = context.getConfiguration().get("xmlToSearch").toString().split("\n");
+		
 		context.write(new Text(
 				"<?xml version=\"1.0\" encoding=\"UTF-8\"?> <All>"), null);
-		
+	
 
 	}
 
-	protected void setParties(String party) {
-		this.Parties.add(party);
-	}
-
-	protected void setPeople(String people) {
-		this.People.add(people);
-	}
-
-	protected void setHashTag(String hashTag) {
-		this.HashTags.add(hashTag);
-	}
 
 	@Override
 	protected void cleanup(Context context) throws IOException,
@@ -83,10 +70,11 @@ public class TranslateReducer extends
 	public void reduce(Text key,
 			Iterable<CompositeValueFormatTranslate> values, Context context)
 			throws IOException, InterruptedException {
+
 		try {
 			// List<String> Tweets = new ArrayList<String>();
 			for (CompositeValueFormatTranslate value : values) {
-
+				
 				// outputKey.set(constructPropertyXml(key, value));
 				// Tweets.addAll(value.getTweet());
 				// System.out.println(value.getScreenName());
@@ -214,35 +202,37 @@ public class TranslateReducer extends
 				}
 				for (int l = 0; l < TranslatedText.size(); l++) {
 					boolean found = false;
+					List<String> Parties = new ArrayList<String>();
+					List<String> People = new ArrayList<String>();
+					List<String> HashTags = new ArrayList<String>();
 					for (int i = 0; i < matches.length; i++) {
-						Parties = new ArrayList<String>();
-						People = new ArrayList<String>();
-						HashTags = new ArrayList<String>();
 						boolean Partyadded = false;
 						boolean Peopleadded = false;
 						boolean HashTagadded = false;
 						String spl[] = matches[i].split(" ");
 						String match = matches[i].replaceAll(" ", "");
-						for (int j = 0; j < spl.length; j++)
-							if (Tweets.get(l).toLowerCase().contains(spl[j])) {
+						for (int j = 0; j < spl.length; j++){
+							if(!spl[j].toLowerCase().equals("the") || spl[j].toLowerCase().equals("of"))
+							if (TweetsRaw.get(l).toLowerCase().contains(spl[j].toLowerCase())) {
 								found = true;
 							}
-						if (Tweets.get(l).toLowerCase().contains(match))
+						}
+						if (TweetsRaw.get(l).toLowerCase().contains(match.toLowerCase()))
 							found = true;
 						if (found) {
 							for (int j = 0; j < spl.length; j++) {
-								if (parties.contains(spl[j]) && !Partyadded) {
-									setParties(matches[i]);
-									Partyadded = true;
-								}
-								if (people.contains(matches[i]) && !Peopleadded) {
-									setPeople(matches[i]);
-									Peopleadded = true;
-								}
-								if (hashTags.contains(matches[i])
-										&& !HashTagadded) {
-									setHashTag(matches[i]);
-									HashTagadded = true;
+								if(!spl[j].toLowerCase().equals("the") || spl[j].toLowerCase().equals("of")){
+									if (contains(parties,spl[j].toLowerCase()) && TweetsRaw.get(l).toLowerCase().contains(spl[j].toLowerCase())) {
+										Parties.add(matches[i]);
+										}
+									if (contains(people,spl[j].toLowerCase()) && TweetsRaw.get(l).toLowerCase().contains(spl[j].toLowerCase())) {
+										People.add(matches[i]);
+										Peopleadded = true;
+									}
+									if (contains(hashTags,spl[j].toLowerCase()) && TweetsRaw.get(l).toLowerCase().contains(spl[j].toLowerCase())) {
+										HashTags.add(matches[i]);
+										HashTagadded = true;
+									}
 								}
 							}
 						}
@@ -342,6 +332,7 @@ public class TranslateReducer extends
 			List<String> People, List<String> HashTags, Float certainty) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("<Tweet><name>").append(ScreenName).append("</name><Concerning>");
+		
 		if (Parties.size() != 0) {
 
 			sb.append("<Parties>");
@@ -366,17 +357,25 @@ public class TranslateReducer extends
 
 			sb.append("<HashTags>");
 
-			for (String s : Parties) {
+			for (String s : HashTags) {
 				sb.append("<HashTag>").append(s).append("</HashTag>");
 			}
 
 			sb.append("</HashTags>");
 		}
-		sb.append("></Concerning><Text>").append(Tweet.replaceAll("|$",""))
+		sb.append("</Concerning><Text>").append(Tweet.replaceAll("|$",""))
 				.append("</Text><Sentiment>").append(finalSentiment)
 				.append("</Sentiment><Certainty>").append(certainty)
 				.append("</Certainty></Tweet>");
 		return sb.toString();
+	}
+	
+	boolean contains(List<String> list,String word){
+		for(String s: list){
+			if(s.contains(word))
+				return true;
+		}
+		return false;
 	}
 
 }

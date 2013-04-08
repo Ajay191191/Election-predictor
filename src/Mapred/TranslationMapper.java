@@ -90,7 +90,7 @@ public class TranslationMapper extends
 		document += "<Custom>";
 		for(String s:oldDocument){
 			if(!s.contains("<?xml version=\"1.0\" encoding=\"UTF-8\"?>") && !s.equals("<Custom></Custom>")){
-				System.out.println("Line: " + s);
+//				System.out.println("Line: " + s);
 				document += s;
 			}
 		}
@@ -115,7 +115,7 @@ public class TranslationMapper extends
 
 			cvf.setScreenName(propertyScreenName);
 			cvf.setTweet(propertyText);
-			System.out.println(cvf.getTweet());
+//			System.out.println(cvf.getTweet());
 			cvf.setID((int)context.getCounter(UpdateCounter.UPDATED).getValue());
 			context.write(new Text(context.getCounter(UpdateCounter.UPDATED).getValue()+" Map"), cvf);
 		} catch (Exception e) {

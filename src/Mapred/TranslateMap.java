@@ -87,7 +87,7 @@ public class TranslateMap {
 		job.setReducerClass(TranslateReducer.class);
 		
 
-//		job.setNumReduceTasks(1);
+		job.setNumReduceTasks(1);
 
 		job.setInputFormatClass(XmlInputFormatCombine.class);
 		job.setOutputFormatClass(TextOutputFormat.class);

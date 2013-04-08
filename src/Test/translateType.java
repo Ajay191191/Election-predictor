@@ -200,6 +200,13 @@ public class translateType {
 		// for (int i = 0; i < nl.getLength(); i++) {
 		// System.out.println(nl.item(i).getTextContent()+"");
 		// }
+		
+		String tweet = "18:16 Elezioni: Berlusconi nessuno ignori valore governabilita' http://t.co/H1L3CGjLVn";
+		String cont = "beppe";
+		if(tweet.contains(cont))
+			System.out.println("Yes");
+		else
+			System.out.println("No");
 	}
 }
 
