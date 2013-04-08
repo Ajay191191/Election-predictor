@@ -42,7 +42,7 @@ public class CompositeValueFormatCombine implements Writable {
 			
 			public void setParties(Text tw){
 				
-				this.parties = new Text(new String(this.parties.toString() + tw + " ")); 
+				this.parties = new Text(new String(this.parties.toString() + tw + "\n")); 
 			}
 			public Text getPeople()
 			{
@@ -51,7 +51,7 @@ public class CompositeValueFormatCombine implements Writable {
 			
 			public void setPeople(Text tw){
 				
-				this.people= new Text(new String(this.people.toString() + tw + " "));
+				this.people= new Text(new String(this.people.toString() + tw + "\n"));
 			}
 			public Text getHashTags()
 			{
@@ -59,7 +59,7 @@ public class CompositeValueFormatCombine implements Writable {
 			}
 			
 			public void setHashTags(Text tw){
-				this.hashTags= new Text(new String(this.hashTags.toString() + tw + " "));
+				this.hashTags= new Text(new String(this.hashTags.toString() + tw + "\n"));
 			}
 
 			

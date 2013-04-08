@@ -37,13 +37,46 @@ public class SingleReducer extends
 	public static String constructPropertyXml(Text name,
 			CompositeValueFormatCombine value) {
 		StringBuilder sb = new StringBuilder();
-		sb.append("<Tweet><name>").append(name)
-				.append("</name><Text Parties=\"").append(value.getParties())
-				.append("\" People=\"").append(value.getPeople())
-				.append("\" HashTags=\"").append(value.getHashTags()).append("\">")
-				.append(value.getTweet()).append("</Text><Sentiment>")
-				.append(value.getSentiment()).append("</Sentiment><Certainty>")
-				.append(value.getCertainty()).append("</Certainty></Tweet>");
+		sb.append("<Tweet><name>").append(name).append("</name><Concerning>");
+		String Parties = value.getParties().toString();
+		String People = value.getPeople().toString();
+		String HashTags = value.getHashTags().toString();
+		if (Parties.length()!= 0) {
+
+			sb.append("<Parties>");
+			String []parties = Parties.split("\n");
+			for (String s : parties) {
+				sb.append("<Party>").append(s).append("</Party>");
+			}
+
+			sb.append("</Parties>");
+		}
+		if (People.length() != 0) {
+
+			sb.append("<Candidates>");
+			
+			String []people = People.split("\n");
+			for (String s : people) {
+				sb.append("<Candidate>").append(s).append("</Candidate>");
+			}
+
+			sb.append("</Candidates>");
+		}
+		if (HashTags.length() != 0) {
+
+			sb.append("<HashTags>");
+			
+			String []hashTag= HashTags.split("\n");
+			for (String s : hashTag) {
+				sb.append("<HashTag>").append(s).append("</HashTag>");
+			}
+
+			sb.append("</HashTags>");
+		}
+		sb.append("></Concerning><Text ").append(value.getTweet())
+				.append("</Text><Sentiment>").append(value.getSentiment())
+				.append("</Sentiment><Certainty>").append(value.getCertainty())
+				.append("</Certainty></Tweet>");
 		return sb.toString();
 	}
 

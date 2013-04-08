@@ -61,5 +61,9 @@
 	<classpathentry kind="lib" path="/home/ajay/HadoopLib/java-json.jar"/>
 	<classpathentry kind="lib" path="/home/ajay/HadoopLib/lib/jsoup-1.7.2.jar"/>
 	<classpathentry kind="lib" path="/home/ajay/HadoopLib/lib/htmlcleaner-2.4.jar"/>
+	<classpathentry kind="lib" path="/home/ajay/HadoopLib/lib/httpclient-4.2.3.jar"/>
+	<classpathentry kind="lib" path="/home/ajay/HadoopLib/lib/httpclient-cache-4.2.3.jar"/>
+	<classpathentry kind="lib" path="/home/ajay/HadoopLib/lib/httpcore-4.2.2.jar"/>
+	<classpathentry kind="lib" path="/home/ajay/HadoopLib/lib/httpmime-4.2.3.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

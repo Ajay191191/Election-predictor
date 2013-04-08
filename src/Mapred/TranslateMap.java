@@ -5,13 +5,14 @@ import java.io.FileReader;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 
-public class ClusterMap {
+public class TranslateMap {
 
 	public static void main(String... args) throws Exception {
 		BufferedReader facetInput = new BufferedReader(new FileReader("Facets"));
@@ -79,13 +80,14 @@ public class ClusterMap {
 		job.setJarByClass(SearchByFacet.class);
 
 		job.setOutputKeyClass(Text.class);
-		job.setOutputValueClass(CompositeValueFormatCombine.class);
+		job.setOutputValueClass(CompositeValueFormatTranslate.class);
 
-		job.setMapperClass(SingleMapper.class);
-		job.setReducerClass(SingleReducer.class);
+		job.setMapperClass(TranslationMapper.class);
+//		job.setCombinerClass(TranslateCombine.class);
+		job.setReducerClass(TranslateReducer.class);
 		
 
-		job.setNumReduceTasks(1);
+//		job.setNumReduceTasks(1);
 
 		job.setInputFormatClass(XmlInputFormatCombine.class);
 		job.setOutputFormatClass(TextOutputFormat.class);

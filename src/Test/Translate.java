@@ -69,6 +69,7 @@ public class Translate {
 		 if(translated)
 			 break;
 		 }
+		 in.close();
 		 String urlString = URLEncoder
 		 .encode("This is a url http://url.com/?asd=asdasdasd%23");
 		 System.out.println(urlString
@@ -82,9 +83,20 @@ public class Translate {
 		 URL url = new URL("http", "localhost", 8604, "/v1/sentence/"
 		  + URLEncoder.encode(translatedText) + ".json");
 		 System.out.println(url.toURI().toString());
-		 JSONObject json = readJsonFromUrl(url.toURI().toString());
+		 //JSONObject json = readJsonFromUrl(url.toURI().toString());
+		 
+		 String jsonText = new String();
+		 URLConnection yc = url.openConnection();
+		 in = new BufferedReader(new InputStreamReader(yc.getInputStream()));
+		 
+		 
+		 while ((inputLine = in.readLine()) != null) 
+			 jsonText += inputLine;
+		 
+		 JSONObject json = new JSONObject(jsonText);
 		 System.out.println(json);
-		 in.close();
+		 
+		 
 		// String urlParameters = "language=english&text=" + translatedText;
 		// String request = "http://text-processing.com/demo/sentiment/";
 		// String reply = new String();
