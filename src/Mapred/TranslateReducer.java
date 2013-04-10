@@ -5,20 +5,18 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
-import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.http.HeaderElement;
 import org.apache.http.HeaderElementIterator;
-import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -31,7 +29,6 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
-import org.apache.http.util.EntityUtils;
 import org.json.JSONObject;
 
 public class TranslateReducer extends
@@ -39,7 +36,6 @@ public class TranslateReducer extends
 
 	List<String> parties, people, hashTags;
 	String matches[];
-	
 
 	@Override
 	protected void setup(Context context) throws IOException,
@@ -52,14 +48,13 @@ public class TranslateReducer extends
 				.get("people").toString().toLowerCase().split("\n")));
 		hashTags = new ArrayList<String>(Arrays.asList(context
 				.getConfiguration().get("hashTags").toString().split("\n")));
-		matches = context.getConfiguration().get("xmlToSearch").toString().split("\n");
-		
+		matches = context.getConfiguration().get("xmlToSearch").toString()
+				.split("\n");
+
 		context.write(new Text(
 				"<?xml version=\"1.0\" encoding=\"UTF-8\"?> <All>"), null);
-	
 
 	}
-
 
 	@Override
 	protected void cleanup(Context context) throws IOException,
@@ -74,24 +69,32 @@ public class TranslateReducer extends
 		try {
 			// List<String> Tweets = new ArrayList<String>();
 			for (CompositeValueFormatTranslate value : values) {
-				
+
 				// outputKey.set(constructPropertyXml(key, value));
 				// Tweets.addAll(value.getTweet());
 				// System.out.println(value.getScreenName());
 				String tweetsRaw = value.getTweet();
 				String screenName = value.getScreenName();
-
 				String tweetsSplit[] = tweetsRaw.split("\n");
 				String tweets = new String();
 				for (String s : tweetsSplit) {
 					tweets += s.replaceAll("[^a-zA-Z ]", "") + " |\n";
 				}
-				
-				List<String> TweetsRaw = new ArrayList<String>(Arrays.asList(tweetsRaw.split("\n")));
+
+				List<String> TweetsRaw = new ArrayList<String>(
+						Arrays.asList(tweetsRaw.split("\n")));
 				List<String> Tweets = new ArrayList<String>(
 						Arrays.asList(tweets.split("\n")));
 				List<String> ScreenName = new ArrayList<String>(
 						Arrays.asList(screenName.split("\n")));
+				String locations = value.getLocation();
+				Pattern pat = Pattern.compile("\\[(.*?)\\]");
+				Matcher matcher = pat.matcher(locations);
+				List<String> finalLocations = new ArrayList<String>();
+				while(matcher.find()){
+					finalLocations.add(matcher.group(1));
+				}
+				System.out.println(locations);
 				// List<String> TranslatedText = value.getTranslatedText();
 				CompositeValueFormatTranslate cvf = new CompositeValueFormatTranslate();
 
@@ -106,37 +109,39 @@ public class TranslateReducer extends
 
 				// System.out.println(nameValuePairs);
 				List<String> TranslatedText = new ArrayList<String>();
-				DefaultHttpClient httpclient= new DefaultHttpClient();
-				httpclient.setKeepAliveStrategy(new ConnectionKeepAliveStrategy() {
-					public long getKeepAliveDuration(HttpResponse response,
-							HttpContext context) {
-						// Honor 'keep-alive' header
-						HeaderElementIterator it = new BasicHeaderElementIterator(
-								response.headerIterator(HTTP.CONN_KEEP_ALIVE));
-						while (it.hasNext()) {
-							HeaderElement he = it.nextElement();
-							String param = he.getName();
-							String value = he.getValue();
-							if (value != null && param.equalsIgnoreCase("timeout")) {
-								try {
-									return Long.parseLong(value) * 1000;
-								} catch (NumberFormatException ignore) {
+				DefaultHttpClient httpclient = new DefaultHttpClient();
+				httpclient
+						.setKeepAliveStrategy(new ConnectionKeepAliveStrategy() {
+							public long getKeepAliveDuration(
+									HttpResponse response, HttpContext context) {
+								// Honor 'keep-alive' header
+								HeaderElementIterator it = new BasicHeaderElementIterator(
+										response.headerIterator(HTTP.CONN_KEEP_ALIVE));
+								while (it.hasNext()) {
+									HeaderElement he = it.nextElement();
+									String param = he.getName();
+									String value = he.getValue();
+									if (value != null
+											&& param.equalsIgnoreCase("timeout")) {
+										try {
+											return Long.parseLong(value) * 1000;
+										} catch (NumberFormatException ignore) {
+										}
+									}
+								}
+								HttpHost target = (HttpHost) context
+										.getAttribute(ExecutionContext.HTTP_TARGET_HOST);
+								if ("www.naughty-server.com"
+										.equalsIgnoreCase(target.getHostName())) {
+									// Keep alive for 5 seconds only
+									return 5 * 1000;
+								} else {
+									// otherwise keep alive for 30 seconds
+									return 30 * 1000 * 1000;
 								}
 							}
-						}
-						HttpHost target = (HttpHost) context
-								.getAttribute(ExecutionContext.HTTP_TARGET_HOST);
-						if ("www.naughty-server.com".equalsIgnoreCase(target
-								.getHostName())) {
-							// Keep alive for 5 seconds only
-							return 5 * 1000;
-						} else {
-							// otherwise keep alive for 30 seconds
-							return 30 * 1000 * 1000;
-						}
-					}
 
-				});
+						});
 				HttpResponse response = httpclient.execute(httppost);
 				// HttpEntity entity = response.getEntity();
 				// if (entity != null) {
@@ -176,7 +181,8 @@ public class TranslateReducer extends
 				while (m.find()) {
 					rep = m.group(1);
 					String ind[] = rep.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
-					translatedCombined += ind[0].replaceAll("^\"|\"$|\\r|\\n", "");
+					translatedCombined += ind[0].replaceAll("^\"|\"$|\\r|\\n",
+							"");
 				}
 				// System.out.println(translatedCombined);
 				// // String ind[] =
@@ -187,16 +193,18 @@ public class TranslateReducer extends
 				String seperatedText[] = translatedCombined.split("\\|");
 				for (String s : seperatedText) {
 					TranslatedText.add(s.trim());
-//					System.out.println("Translated : " + s.trim());
+					// System.out.println("Translated : " + s.trim());
 				}
-//				System.out.println("Original : " + Tweets.size() + " ScreenName: " + ScreenName.size() + "Translated + " + TranslatedText.size());
-				if(TranslatedText.size() != Tweets.size()){
-					System.out.println("Original ");
-					for(String s: Tweets){
+				// System.out.println("Original : " + Tweets.size() +
+				// " ScreenName: " + ScreenName.size() + "Translated + " +
+				// TranslatedText.size());
+				if (TranslatedText.size() != finalLocations.size()) {
+					System.out.println("Locations ");
+					for (String s : finalLocations) {
 						System.out.println(s);
 					}
 					System.out.println("Translated ");
-					for(String s: TranslatedText){
+					for (String s : TranslatedText) {
 						System.out.println(s);
 					}
 				}
@@ -211,25 +219,44 @@ public class TranslateReducer extends
 						boolean HashTagadded = false;
 						String spl[] = matches[i].split(" ");
 						String match = matches[i].replaceAll(" ", "");
-						for (int j = 0; j < spl.length; j++){
-							if(!spl[j].toLowerCase().equals("the") || spl[j].toLowerCase().equals("of"))
-							if (TweetsRaw.get(l).toLowerCase().contains(spl[j].toLowerCase())) {
-								found = true;
-							}
+						for (int j = 0; j < spl.length; j++) {
+							if (!spl[j].toLowerCase().equals("the")
+									|| spl[j].toLowerCase().equals("of"))
+								if (TweetsRaw.get(l).toLowerCase()
+										.contains(spl[j].toLowerCase())) {
+									found = true;
+								}
 						}
-						if (TweetsRaw.get(l).toLowerCase().contains(match.toLowerCase()))
+						if (TweetsRaw.get(l).toLowerCase()
+								.contains(match.toLowerCase()))
 							found = true;
 						if (found) {
 							for (int j = 0; j < spl.length; j++) {
-								if(!spl[j].toLowerCase().equals("the") || spl[j].toLowerCase().equals("of")){
-									if (contains(parties,spl[j].toLowerCase()) && TweetsRaw.get(l).toLowerCase().contains(spl[j].toLowerCase())) {
+								if (!spl[j].toLowerCase().equals("the")
+										|| spl[j].toLowerCase().equals("of")) {
+									if (contains(parties, spl[j].toLowerCase())
+											&& TweetsRaw
+													.get(l)
+													.toLowerCase()
+													.contains(
+															spl[j].toLowerCase())) {
 										Parties.add(matches[i]);
-										}
-									if (contains(people,spl[j].toLowerCase()) && TweetsRaw.get(l).toLowerCase().contains(spl[j].toLowerCase())) {
+									}
+									if (contains(people, spl[j].toLowerCase())
+											&& TweetsRaw
+													.get(l)
+													.toLowerCase()
+													.contains(
+															spl[j].toLowerCase())) {
 										People.add(matches[i]);
 										Peopleadded = true;
 									}
-									if (contains(hashTags,spl[j].toLowerCase()) && TweetsRaw.get(l).toLowerCase().contains(spl[j].toLowerCase())) {
+									if (contains(hashTags, spl[j].toLowerCase())
+											&& TweetsRaw
+													.get(l)
+													.toLowerCase()
+													.contains(
+															spl[j].toLowerCase())) {
 										HashTags.add(matches[i]);
 										HashTagadded = true;
 									}
@@ -246,7 +273,8 @@ public class TranslateReducer extends
 						String inputLine;
 						// String translatedText = new String();
 						int countG = 0;
-//						System.out.println("Translated " + TranslatedText.get(l) + "Original " + Tweets.get(l));
+						// System.out.println("Translated " +
+						// TranslatedText.get(l) + "Original " + Tweets.get(l));
 						URL translate = new URL(
 								"http://localhost:8604/v1/sentence/"
 										+ URLEncoder
@@ -313,10 +341,16 @@ public class TranslateReducer extends
 						if (secondsentiment.trim().equals("\'negative\'"))
 							finalSentiment = new String("negative");
 						Text outputKey = new Text();
-						outputKey.set(constructPropertyXml(key, TweetsRaw.get(l),
-								ScreenName.get(l), finalSentiment, Parties,
-								People, HashTags, Float.parseFloat(json.get(
-										"certainty").toString())));
+						removeDuplicates(Parties);
+						removeDuplicates(People);
+						removeDuplicates(HashTags);
+						
+						
+						outputKey.set(constructPropertyXml(key, TweetsRaw
+								.get(l), ScreenName.get(l), finalSentiment,
+								Parties, People, HashTags,finalLocations.get(l), Float
+										.parseFloat(json.get("certainty")
+												.toString())));
 						context.write(outputKey, null);
 					}
 				}
@@ -329,10 +363,18 @@ public class TranslateReducer extends
 
 	public static String constructPropertyXml(Text name, String Tweet,
 			String ScreenName, String finalSentiment, List<String> Parties,
-			List<String> People, List<String> HashTags, Float certainty) {
+			List<String> People, List<String> HashTags,String finalLocation, Float certainty) {
 		StringBuilder sb = new StringBuilder();
-		sb.append("<Tweet><name>").append(ScreenName).append("</name><Concerning>");
+		sb.append("<Tweet><name>").append(ScreenName)
+				.append("</name>");
 		
+		sb.append("<gpe ");
+		if(!finalLocation.trim().equals("Not Available")){
+				String latLang[] = finalLocation.trim().split(",");
+				if(latLang.length>0)
+					sb.append("lat=\"").append(latLang[0]).append("\" long=\"").append(latLang[1]).append("\" ");
+		}
+		sb.append("></gpe><concerning>");
 		if (Parties.size() != 0) {
 
 			sb.append("<Parties>");
@@ -363,19 +405,25 @@ public class TranslateReducer extends
 
 			sb.append("</HashTags>");
 		}
-		sb.append("</Concerning><Text>").append(Tweet.replaceAll("|$",""))
+		sb.append("</Concerning><Text>").append(Tweet.replaceAll("|$", ""))
 				.append("</Text><Sentiment>").append(finalSentiment)
 				.append("</Sentiment><Certainty>").append(certainty)
 				.append("</Certainty></Tweet>");
 		return sb.toString();
 	}
-	
-	boolean contains(List<String> list,String word){
-		for(String s: list){
-			if(s.contains(word))
+
+	boolean contains(List<String> list, String word) {
+		for (String s : list) {
+			if (s.contains(word))
 				return true;
 		}
 		return false;
+	}
+
+	public static void removeDuplicates(List<String> list) {
+		HashSet<String> set = new HashSet<String>(list);
+		list.clear();
+		list.addAll(set);
 	}
 
 }

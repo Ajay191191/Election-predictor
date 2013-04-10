@@ -13,12 +13,14 @@ public class CompositeValueFormatTranslate implements Writable {
 	private String Tweet;
 	private String ScreenName;
 	private String TranslatedText;
+	private String Location;
 	private int ID;
 
 	public CompositeValueFormatTranslate() {
 		this.Tweet = new String();
 		this.ScreenName = new String();
 		this.TranslatedText= new String();
+		this.Location= new String();
 		ID=0;
 	}
 	
@@ -28,6 +30,14 @@ public class CompositeValueFormatTranslate implements Writable {
 
 	public void setTranslatedText(String tw) {
 		this.TranslatedText= new String(tw);
+	}
+	
+	public String getLocation() {
+		return this.Location;
+	}
+
+	public void setLocation(String tw) {
+		this.Location= new String(tw);
 	}
 
 	public int getID() {
@@ -62,6 +72,7 @@ public class CompositeValueFormatTranslate implements Writable {
 		this.Tweet = in.readUTF();
 		this.ScreenName = in.readUTF();
 		this.TranslatedText = in.readUTF();
+		this.Location = in.readUTF();
 		this.ID = in.readInt();
 
 	}
@@ -71,6 +82,7 @@ public class CompositeValueFormatTranslate implements Writable {
 		out.writeUTF(this.Tweet);
 		out.writeUTF(this.ScreenName);
 		out.writeUTF(this.TranslatedText);
+		out.writeUTF(this.Location);
 		out.writeInt(ID);
 	
 	}

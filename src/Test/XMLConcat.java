@@ -105,6 +105,10 @@ public class XMLConcat {
 					System.out.println("Fail");
 				inputStream.close();
 				x++;
+//				if(x==750000){
+				if(x==1000){
+					
+				}
 			}
 			IOUtils.write("</Custom>", outputStream);
 			outputStream.close();
