@@ -374,7 +374,7 @@ public class TranslateReducer extends
 				if(latLang.length>0)
 					sb.append("lat=\"").append(latLang[0]).append("\" long=\"").append(latLang[1]).append("\" ");
 		}
-		sb.append("></gpe><concerning>");
+		sb.append("></gpe><Concerning>");
 		if (Parties.size() != 0) {
 
 			sb.append("<Parties>");

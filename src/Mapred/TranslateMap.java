@@ -94,7 +94,12 @@ public class TranslateMap {
 					mapReduceDone = false;
 
 				}
-				// System.out.println(filename.toString());
+				
+				File currentFile = new File(filename.toString() + "-done");
+//				System.out.println(filename.getName());
+				if(filename.getName().split("-").length > 1){
+					continue;
+				}
 				InputStream inputStream = new BufferedInputStream(
 						new FileInputStream(filename));
 				// System.out.println(inputStream.available()+":Available");
@@ -108,6 +113,7 @@ public class TranslateMap {
 						outputStream) == -1)
 					System.out.println("Fail");
 				inputStream.close();
+				filename.renameTo(currentFile);
 				x++;
 				// if(x==750000){
 				if (outputFile.length() / (1024 *1024 ) >= 100) {
@@ -279,8 +285,8 @@ public class TranslateMap {
 		job.setMapperClass(TranslationMapper.class);
 		// job.setCombinerClass(TranslateCombine.class);
 		job.setReducerClass(TranslateReducer.class);
-
-		job.setNumReduceTasks(1);
+ 
+//		job.setNumReduceTasks(1);
 
 		job.setInputFormatClass(XmlInputFormatCombine.class);
 		job.setOutputFormatClass(TextOutputFormat.class);
