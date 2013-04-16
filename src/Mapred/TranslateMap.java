@@ -3,14 +3,21 @@ package Mapred;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.comparator.NameFileComparator;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -24,8 +31,36 @@ public class TranslateMap {
 
 	private static int jobNo;
 
+	private static boolean clearAll ;
+	
+	private static File lastFile;
+	
+	static boolean mapreduceSuccessful ;
+	
+
 	public static void main(String... args) throws Exception {
 		BufferedReader facetInput = new BufferedReader(new FileReader("Facets"));
+//		System.out.println(args[0]);
+		
+		File currentStatus = new File("currentStatus");
+		if(!currentStatus.exists()){
+			currentStatus.createNewFile();
+			BufferedWriter currentStatusStream = new BufferedWriter(new FileWriter(currentStatus));
+			currentStatusStream.write("True");
+			currentStatusStream.flush();
+		}
+		BufferedReader currentStatusInputStream = new BufferedReader(new FileReader(currentStatus));
+		if(!currentStatus.exists()){
+			currentStatus.createNewFile();
+		}
+		else{
+			mapreduceSuccessful = Boolean.parseBoolean(currentStatusInputStream.readLine());
+			if(!mapreduceSuccessful)
+				lastFile = new File(currentStatusInputStream.readLine());
+		}
+		if(args[0].equals("True")){
+			clearAll=true;
+		}
 		String line = facetInput.readLine();
 		int num = 1;
 		String search = new String();
@@ -70,6 +105,7 @@ public class TranslateMap {
 
 		File dir = new File("/home/ajay/Project/To_Zip");
 		File[] rootFiles = dir.listFiles();
+		Arrays.sort(rootFiles, NameFileComparator.NAME_COMPARATOR);
 
 		File part0 = new File("/home/hduser/Tweets_Hadoop/part-r-00000");
 		File part1 = new File("/home/hduser/Tweets_Hadoop/part-r-00001");
@@ -77,176 +113,203 @@ public class TranslateMap {
 		File outputPart = null;
 		InputStream inStream = null;
 		OutputStream outStream = null;
-
+		BufferedWriter currentStatusStream = new BufferedWriter(new FileWriter(currentStatus));
 		boolean mapReduceDone = false;
-		try {
-			int x = 0;
-			System.out.println(rootFiles.length + ":Length");
-			File outputFile = new File("Merged_Custom_Tag.xml");
-			OutputStream outputStream = new BufferedOutputStream(
-					new FileOutputStream(outputFile));
+		if (clearAll) {
 			for (File filename : rootFiles) {
-				if (mapReduceDone) {
-					outputFile.delete();
-					outputFile.createNewFile();
-					outputStream = new BufferedOutputStream(
-							new FileOutputStream(outputFile));
-					mapReduceDone = false;
-
+				if(!mapreduceSuccessful){
+					if(Integer.parseInt(lastFile.getName().split(".")[0])>Integer.parseInt(filename.getName().split(".")[0]))
+						continue;
 				}
-				
-				File currentFile = new File(filename.toString() + "-done");
-//				System.out.println(filename.getName());
-				if(filename.getName().split("-").length > 1){
-					continue;
-				}
-				InputStream inputStream = new BufferedInputStream(
-						new FileInputStream(filename));
-				// System.out.println(inputStream.available()+":Available");
-				if (x == 0) {
-					IOUtils.write("<Custom>", outputStream);
-				}
-				if (x % 10 == 0) {
-					IOUtils.write("</Custom><Custom>", outputStream);
-				}
-				if (org.apache.commons.io.IOUtils.copy(inputStream,
-						outputStream) == -1)
-					System.out.println("Fail");
-				inputStream.close();
-				filename.renameTo(currentFile);
-				x++;
-				// if(x==750000){
-				if (outputFile.length() / (1024 *1024 ) >= 100) {
-					IOUtils.write("</Custom>", outputStream);
-					outputStream.close();
-					if (part0.exists()) {
-						outputPart = new File("/home/ajay/Project/New/part-"
-								+ jobNo + "-0.xml");
-						inStream = new FileInputStream(part0);
-						outStream = new FileOutputStream(outputPart);
-
-						byte[] buffer = new byte[1024];
-
-						int length;
-						// copy the file content in bytes
-						while ((length = inStream.read(buffer)) > 0) {
-
-							outStream.write(buffer, 0, length);
-
-						}
-
-						inStream.close();
-						outStream.close();
-					}
-					if (part1.exists()) {
-						outputPart = new File("/home/ajay/Project/New/part-"
-								+ jobNo + "-1.xml");
-						inStream = new FileInputStream(part1);
-						outStream = new FileOutputStream(outputPart);
-
-						byte[] buffer = new byte[1024];
-
-						int length;
-						// copy the file content in bytes
-						while ((length = inStream.read(buffer)) > 0) {
-
-							outStream.write(buffer, 0, length);
-
-						}
-
-						inStream.close();
-						outStream.close();
-					}
-					runJob("Tweets_custom", "outputCustom", "<Custom>",
-							"</Custom>", search, parties, people, hashTags,
-							"Merged_Custom_Tag.xml");
-					jobNo++;
-					mapReduceDone = true;
+				if (filename.getName().split("-").length > 1) {
+					String filenames[] = filename.getName().split("-");
+					File renameTo = new File(filename.getParent() +"/" +  filenames[0]);
+//					System.out.println(renameTo);
+					filename.renameTo(renameTo);
 				}
 			}
-			IOUtils.write("</Custom>", outputStream);
-			outputStream.close();
-			if (part0.exists()) {
-				outputPart = new File("/home/ajay/Project/New/part-"
-						+ jobNo + "-0.xml");
-				inStream = new FileInputStream(part0);
-				outStream = new FileOutputStream(outputPart);
-
-				byte[] buffer = new byte[1024];
-
-				int length;
-				// copy the file content in bytes
-				while ((length = inStream.read(buffer)) > 0) {
-
-					outStream.write(buffer, 0, length);
-
-				}
-
-				inStream.close();
-				outStream.close();
-			}
-			if (part1.exists()) {
-				outputPart = new File("/home/ajay/Project/New/part-"
-						+ jobNo + "-1.xml");
-				inStream = new FileInputStream(part1);
-				outStream = new FileOutputStream(outputPart);
-
-				byte[] buffer = new byte[1024];
-
-				int length;
-				// copy the file content in bytes
-				while ((length = inStream.read(buffer)) > 0) {
-
-					outStream.write(buffer, 0, length);
-
-				}
-
-				inStream.close();
-				outStream.close();
-			}
-			runJob("Tweets_custom", "outputCustom", "<Custom>", "</Custom>",
-					search, parties, people, hashTags, "Merged_Custom_Tag.xml");
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
-		finally{
-			if (part0.exists()) {
-				outputPart = new File("/home/ajay/Project/New/part-"
-						+ jobNo + "-0.xml");
-				inStream = new FileInputStream(part0);
-				outStream = new FileOutputStream(outputPart);
+		if (!clearAll) {
+			try {
+				int x = 0;
+				System.out.println(rootFiles.length + ":Length");
+				File outputFile = new File("Merged_Custom_Tag.xml");
+				OutputStream outputStream = new BufferedOutputStream(
+						new FileOutputStream(outputFile));
+				for (File filename : rootFiles) {
+					if(currentStatus.exists()){
+						currentStatus.delete();
+						currentStatus.createNewFile();
+					}
+					if (mapReduceDone) {
+						currentStatusStream.write(mapReduceDone+"");
+						currentStatusStream.flush();
+						outputFile.delete();
+						outputFile.createNewFile();
+						outputStream = new BufferedOutputStream(
+								new FileOutputStream(outputFile));
+						mapReduceDone = false;
 
-				byte[] buffer = new byte[1024];
+					}
+					currentStatusStream.write(mapReduceDone + "\n" + filename);
+					currentStatusStream.flush();
+					File currentFile = new File(filename.toString() + "-done");
+					// System.out.println(filename.getName());
+					if (filename.getName().split("-").length > 1) {
+						continue;
+					}
+					InputStream inputStream = new BufferedInputStream(
+							new FileInputStream(filename));
+					// System.out.println(inputStream.available()+":Available");
+					if (x == 0) {
+						IOUtils.write("<Custom>", outputStream);
+					}
+					if (x % 10 == 0) {
+						IOUtils.write("</Custom><Custom>", outputStream);
+					}
+					if (org.apache.commons.io.IOUtils.copy(inputStream,
+							outputStream) == -1)
+						System.out.println("Fail");
+					inputStream.close();
+					filename.renameTo(currentFile);
+					x++;
+					// if(x==750000){
+					if (outputFile.length() / (1024) >= 100) {
+						IOUtils.write("</Custom>", outputStream);
+						outputStream.close();
+						if (part0.exists()) {
+							outputPart = new File(
+									"/home/ajay/Project/New/part-" + jobNo
+											+ "-0.xml");
+							inStream = new FileInputStream(part0);
+							outStream = new FileOutputStream(outputPart);
 
-				int length;
-				// copy the file content in bytes
-				while ((length = inStream.read(buffer)) > 0) {
+							byte[] buffer = new byte[1024];
 
-					outStream.write(buffer, 0, length);
+							int length;
+							// copy the file content in bytes
+							while ((length = inStream.read(buffer)) > 0) {
 
+								outStream.write(buffer, 0, length);
+
+							}
+
+							inStream.close();
+							outStream.close();
+						}
+						if (part1.exists()) {
+							outputPart = new File(
+									"/home/ajay/Project/New/part-" + jobNo
+											+ "-1.xml");
+							inStream = new FileInputStream(part1);
+							outStream = new FileOutputStream(outputPart);
+
+							byte[] buffer = new byte[1024];
+
+							int length;
+							// copy the file content in bytes
+							while ((length = inStream.read(buffer)) > 0) {
+
+								outStream.write(buffer, 0, length);
+
+							}
+
+							inStream.close();
+							outStream.close();
+						}
+						runJob("Tweets_custom", "outputCustom", "<Custom>",
+								"</Custom>", search, parties, people, hashTags,
+								"Merged_Custom_Tag.xml");
+						jobNo++;
+						mapReduceDone = true;
+					}
 				}
+				IOUtils.write("</Custom>", outputStream);
+				outputStream.close();
+				if (part0.exists()) {
+					outputPart = new File("/home/ajay/Project/New/part-"
+							+ jobNo + "-0.xml");
+					inStream = new FileInputStream(part0);
+					outStream = new FileOutputStream(outputPart);
 
-				inStream.close();
-				outStream.close();
-			}
-			if (part1.exists()) {
-				outputPart = new File("/home/ajay/Project/New/part-"
-						+ jobNo + "-1.xml");
-				inStream = new FileInputStream(part1);
-				outStream = new FileOutputStream(outputPart);
+					byte[] buffer = new byte[1024];
 
-				byte[] buffer = new byte[1024];
+					int length;
+					// copy the file content in bytes
+					while ((length = inStream.read(buffer)) > 0) {
 
-				int length;
-				// copy the file content in bytes
-				while ((length = inStream.read(buffer)) > 0) {
+						outStream.write(buffer, 0, length);
 
-					outStream.write(buffer, 0, length);
+					}
 
+					inStream.close();
+					outStream.close();
 				}
+				if (part1.exists()) {
+					outputPart = new File("/home/ajay/Project/New/part-"
+							+ jobNo + "-1.xml");
+					inStream = new FileInputStream(part1);
+					outStream = new FileOutputStream(outputPart);
 
-				inStream.close();
-				outStream.close();
+					byte[] buffer = new byte[1024];
+
+					int length;
+					// copy the file content in bytes
+					while ((length = inStream.read(buffer)) > 0) {
+						outStream.write(buffer, 0, length);
+					}
+
+					inStream.close();
+					outStream.close();
+				}
+				runJob("Tweets_custom", "outputCustom", "<Custom>",
+						"</Custom>", search, parties, people, hashTags,
+						"Merged_Custom_Tag.xml");
+				currentStatusStream.write(mapReduceDone+"");
+				currentStatusStream.flush();
+			} catch (Exception e) {
+				e.printStackTrace();
+			} finally {
+				if (part0.exists()) {
+					outputPart = new File("/home/ajay/Project/New/part-"
+							+ jobNo + "-0.xml");
+					inStream = new FileInputStream(part0);
+					outStream = new FileOutputStream(outputPart);
+
+					byte[] buffer = new byte[1024];
+
+					int length;
+					// copy the file content in bytes
+					while ((length = inStream.read(buffer)) > 0) {
+
+						outStream.write(buffer, 0, length);
+
+					}
+
+					inStream.close();
+					outStream.close();
+				}
+				if (part1.exists()) {
+					outputPart = new File("/home/ajay/Project/New/part-"
+							+ jobNo + "-1.xml");
+					inStream = new FileInputStream(part1);
+					outStream = new FileOutputStream(outputPart);
+
+					byte[] buffer = new byte[1024];
+
+					int length;
+					// copy the file content in bytes
+					while ((length = inStream.read(buffer)) > 0) {
+
+						outStream.write(buffer, 0, length);
+
+					}
+
+					inStream.close();
+					outStream.close();
+				}
+				currentStatusStream.close();
+				currentStatusInputStream.close();
 			}
 		}
 
@@ -285,8 +348,8 @@ public class TranslateMap {
 		job.setMapperClass(TranslationMapper.class);
 		// job.setCombinerClass(TranslateCombine.class);
 		job.setReducerClass(TranslateReducer.class);
- 
-//		job.setNumReduceTasks(1);
+
+		// job.setNumReduceTasks(1);
 
 		job.setInputFormatClass(XmlInputFormatCombine.class);
 		job.setOutputFormatClass(TextOutputFormat.class);
@@ -301,10 +364,51 @@ public class TranslateMap {
 		Path hadoopSrcPath = new Path("outputCustom/part-r-00000");
 		Path hadoopSrcPath1 = new Path("outputCustom/part-r-00001");
 		if (job.isComplete()) {
-			if (fs.exists(hadoopSrcPath))
+
+			if (fs.exists(hadoopSrcPath)) {
+
+				List<String> list = new ArrayList<String>();
+				list.add("mlcp.sh");
 				fs.copyToLocalFile(true, hadoopSrcPath, localOutputPath);
-			if (fs.exists(hadoopSrcPath1))
+				list.add("import -host localhost -port 9002 -username admin -password admin -mode local -input_file_path /home/ajay/Project/New/part-"
+						+ jobNo
+						+ "-0.xml -input_file_type aggregates -aggregate_record_element Tweet -output_uri_prefix /All/ -output_uri_suffix .xml");
+				// list.add();
+				String s;
+				ProcessBuilder b = new ProcessBuilder(list);
+				Process p = b.start();
+				BufferedReader stdInput = new BufferedReader(
+						new InputStreamReader(p.getInputStream()));
+				BufferedReader stdError = new BufferedReader(
+						new InputStreamReader(p.getErrorStream()));
+				s = stdInput.readLine();
+				String s2;
+				if (s == null) {
+					System.out.println("Failed : ");
+				}
+			}
+			if (fs.exists(hadoopSrcPath1)) {
+				List<String> list = new ArrayList<String>();
+				list.add("mlcp.sh");
 				fs.copyToLocalFile(true, hadoopSrcPath1, localOutputPath);
+				list.add("import -host localhost -port 9002 -username admin -password admin -mode local -input_file_path /home/ajay/Project/New/part-"
+						+ jobNo
+						+ "-1.xml -input_file_type aggregates -aggregate_record_element Tweet -output_uri_prefix /All/ -output_uri_suffix .xml");
+				// list.add();
+				String s;
+				ProcessBuilder b = new ProcessBuilder(list);
+				Process p = b.start();
+				BufferedReader stdInput = new BufferedReader(
+						new InputStreamReader(p.getInputStream()));
+				BufferedReader stdError = new BufferedReader(
+						new InputStreamReader(p.getErrorStream()));
+				s = stdInput.readLine();
+				String s2;
+				System.out.println(s);
+				if (s == null) {
+					System.out.println("Failed : ");
+				}
+			}
 		}
 	}
 }

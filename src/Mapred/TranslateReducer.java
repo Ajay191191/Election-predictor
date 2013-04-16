@@ -94,7 +94,7 @@ public class TranslateReducer extends
 				while(matcher.find()){
 					finalLocations.add(matcher.group(1));
 				}
-				System.out.println(locations);
+//				System.out.println(locations);
 				// List<String> TranslatedText = value.getTranslatedText();
 				CompositeValueFormatTranslate cvf = new CompositeValueFormatTranslate();
 

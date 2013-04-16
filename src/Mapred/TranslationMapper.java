@@ -136,7 +136,7 @@ public class TranslationMapper extends
 				locationCity += ( !nl.item(i).getTextContent().equals("")?nl.item(i).getTextContent().replaceAll("[^a-zA-z, ]",""): "");
 			}
 			
-			System.out.println(locationCity);
+//			System.out.println(locationCity);
 			DefaultHttpClient httpclient = new DefaultHttpClient();
 			httpclient.setKeepAliveStrategy(new ConnectionKeepAliveStrategy() {
 				public long getKeepAliveDuration(HttpResponse response,
@@ -188,7 +188,7 @@ public class TranslationMapper extends
 			cvf.setScreenName(propertyScreenName);
 			cvf.setTweet(propertyText);
 			cvf.setLocation(location);
-			System.out.println(cvf.getLocation());
+//			System.out.println(cvf.getLocation());
 			// System.out.println(cvf.getTweet());
 			cvf.setID((int) context.getCounter(UpdateCounter.UPDATED)
 					.getValue());
