@@ -1,14 +1,11 @@
 package Test;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLEncoder;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -31,7 +28,6 @@ import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
 import org.json.JSONException;
-import org.json.JSONObject;
 
 public class translateType {
 
@@ -202,29 +198,35 @@ public class translateType {
 //		// System.out.println(nl.item(i).getTextContent()+"");
 //		// }
 //		
-		String locationCity = "italia,IT|Milano,IT|Antibes|Bolzano, Italia,IT|";
-		HttpPost httppost = new HttpPost("http://localhost/getLatLong.php");
-		List<NameValuePair> nameValuePairs1 = new ArrayList<NameValuePair>(
-				1);
-		nameValuePairs1.add(new BasicNameValuePair("address", locationCity.replaceAll("[^a-zA-Z,|]", "")));
-		httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs1));
-//		System.out.println(nameValuePairs1);
-		HttpResponse response = httpclient.execute(httppost);
-		BufferedReader rd = new BufferedReader(new InputStreamReader(
-				response.getEntity().getContent()));
-		String lines = new String();
-		String location=new String();
-		while ((lines = rd.readLine()) != null) {
-//			 System.out.println(lines);
-			location += lines;
+//		String locationCity = "italia,IT|Milano,IT|Antibes|Bolzano, Italia,IT|";
+//		HttpPost httppost = new HttpPost("http://localhost/getLatLong.php");
+//		List<NameValuePair> nameValuePairs1 = new ArrayList<NameValuePair>(
+//				1);
+//		nameValuePairs1.add(new BasicNameValuePair("address", locationCity.replaceAll("[^a-zA-Z,|]", "")));
+//		httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs1));
+////		System.out.println(nameValuePairs1);
+//		HttpResponse response = httpclient.execute(httppost);
+//		BufferedReader rd = new BufferedReader(new InputStreamReader(
+//				response.getEntity().getContent()));
+//		String lines = new String();
+//		String location=new String();
+//		while ((lines = rd.readLine()) != null) {
+////			 System.out.println(lines);
+//			location += lines;
+//		}
+//		
+//		Pattern p = Pattern.compile("\\[(.*?)\\]");
+//		Matcher m = p.matcher(location);
+//		while (m.find()) {
+//			System.out.println(m.group(1));
+//		}
+//		
+//		
+		File filename = new File("303059527211823104.xml-done");
+		String[] split = filename.toString().split("\\.");
+		for(String s: split){
+			System.out.println(s);
 		}
-		
-		Pattern p = Pattern.compile("\\[(.*?)\\]");
-		Matcher m = p.matcher(location);
-		while (m.find()) {
-			System.out.println(m.group(1));
-		}
-			
 		
 		
 	}

@@ -3,12 +3,10 @@ package Mapred;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -16,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.comparator.NameFileComparator;
 import org.apache.hadoop.conf.Configuration;
@@ -31,35 +30,16 @@ public class TranslateMap {
 
 	private static int jobNo;
 
-	private static boolean clearAll ;
-	
+	private static boolean clearAll;
+
 	private static File lastFile;
-	
-	static boolean mapreduceSuccessful ;
-	
 
 	public static void main(String... args) throws Exception {
 		BufferedReader facetInput = new BufferedReader(new FileReader("Facets"));
-//		System.out.println(args[0]);
-		
-		File currentStatus = new File("currentStatus");
-		if(!currentStatus.exists()){
-			currentStatus.createNewFile();
-			BufferedWriter currentStatusStream = new BufferedWriter(new FileWriter(currentStatus));
-			currentStatusStream.write("True");
-			currentStatusStream.flush();
-		}
-		BufferedReader currentStatusInputStream = new BufferedReader(new FileReader(currentStatus));
-		if(!currentStatus.exists()){
-			currentStatus.createNewFile();
-		}
-		else{
-			mapreduceSuccessful = Boolean.parseBoolean(currentStatusInputStream.readLine());
-			if(!mapreduceSuccessful)
-				lastFile = new File(currentStatusInputStream.readLine());
-		}
-		if(args[0].equals("True")){
-			clearAll=true;
+		// System.out.println(args[0]);
+
+		if (args[0].equals("True")) {
+			clearAll = true;
 		}
 		String line = facetInput.readLine();
 		int num = 1;
@@ -104,60 +84,78 @@ public class TranslateMap {
 		// Concat Files :
 
 		File dir = new File("/home/ajay/Project/To_Zip");
+		File createdDir = new File(dir.toString() + "/create");
+		if (!createdDir.exists())
+			if (!createdDir.mkdir()) {
+//				System.out.println("Directory Creation failed");
+				System.exit(-1);
+			}
 		File[] rootFiles = dir.listFiles();
-		Arrays.sort(rootFiles, NameFileComparator.NAME_COMPARATOR);
+		File[] incompleteFiles = createdDir.listFiles();
 
+		if (incompleteFiles.length != 0) {
+//			System.out.println("Deleting Files in create");
+			Arrays.sort(incompleteFiles, NameFileComparator.NAME_COMPARATOR);
+			lastFile = incompleteFiles[0];
+			for (File filename : incompleteFiles) {
+				filename.delete();
+			}
+		}
+
+		Arrays.sort(rootFiles, NameFileComparator.NAME_COMPARATOR);
 		File part0 = new File("/home/hduser/Tweets_Hadoop/part-r-00000");
 		File part1 = new File("/home/hduser/Tweets_Hadoop/part-r-00001");
 
 		File outputPart = null;
 		InputStream inStream = null;
 		OutputStream outStream = null;
-		BufferedWriter currentStatusStream = new BufferedWriter(new FileWriter(currentStatus));
+
 		boolean mapReduceDone = false;
 		if (clearAll) {
-			for (File filename : rootFiles) {
-				if(!mapreduceSuccessful){
-					if(Integer.parseInt(lastFile.getName().split(".")[0])>Integer.parseInt(filename.getName().split(".")[0]))
-						continue;
-				}
-				if (filename.getName().split("-").length > 1) {
-					String filenames[] = filename.getName().split("-");
-					File renameTo = new File(filename.getParent() +"/" +  filenames[0]);
-//					System.out.println(renameTo);
-					filename.renameTo(renameTo);
-				}
+			for (File filename : incompleteFiles) {
+				filename.delete();
 			}
 		}
 		if (!clearAll) {
 			try {
 				int x = 0;
-				System.out.println(rootFiles.length + ":Length");
+//				System.out.println(rootFiles.length + ":Length");
 				File outputFile = new File("Merged_Custom_Tag.xml");
 				OutputStream outputStream = new BufferedOutputStream(
 						new FileOutputStream(outputFile));
+				boolean skipped = false;
 				for (File filename : rootFiles) {
-					if(currentStatus.exists()){
-						currentStatus.delete();
-						currentStatus.createNewFile();
+					if(!skipped)
+					if (lastFile != null) {
+//						System.out.println("Skipping Files");
+//						System.out.println(lastFile.getName());
+//						System.out.println(filename.getName());
+						if (Long.parseLong(lastFile.getName().split("\\.")[0]) > Long.parseLong(filename.getName().split("\\.")[0])) {
+							continue;
+						}
+						else
+						{
+							skipped=true;
+							lastFile=null;
+						}
 					}
+
+					FileUtils.copyFileToDirectory(filename, createdDir);
+
 					if (mapReduceDone) {
-						currentStatusStream.write(mapReduceDone+"");
-						currentStatusStream.flush();
 						outputFile.delete();
 						outputFile.createNewFile();
 						outputStream = new BufferedOutputStream(
 								new FileOutputStream(outputFile));
+						incompleteFiles = createdDir.listFiles();
+						for (File filenames : incompleteFiles) {
+							filenames.delete();
+						}
 						mapReduceDone = false;
+						
 
 					}
-					currentStatusStream.write(mapReduceDone + "\n" + filename);
-					currentStatusStream.flush();
-					File currentFile = new File(filename.toString() + "-done");
-					// System.out.println(filename.getName());
-					if (filename.getName().split("-").length > 1) {
-						continue;
-					}
+
 					InputStream inputStream = new BufferedInputStream(
 							new FileInputStream(filename));
 					// System.out.println(inputStream.available()+":Available");
@@ -171,10 +169,10 @@ public class TranslateMap {
 							outputStream) == -1)
 						System.out.println("Fail");
 					inputStream.close();
-					filename.renameTo(currentFile);
+
 					x++;
 					// if(x==750000){
-					if (outputFile.length() / (1024) >= 100) {
+					if (outputFile.length() / (1024) >= 300) {
 						IOUtils.write("</Custom>", outputStream);
 						outputStream.close();
 						if (part0.exists()) {
@@ -265,8 +263,7 @@ public class TranslateMap {
 				runJob("Tweets_custom", "outputCustom", "<Custom>",
 						"</Custom>", search, parties, people, hashTags,
 						"Merged_Custom_Tag.xml");
-				currentStatusStream.write(mapReduceDone+"");
-				currentStatusStream.flush();
+
 			} catch (Exception e) {
 				e.printStackTrace();
 			} finally {
@@ -308,8 +305,12 @@ public class TranslateMap {
 					inStream.close();
 					outStream.close();
 				}
-				currentStatusStream.close();
-				currentStatusInputStream.close();
+				incompleteFiles = createdDir.listFiles();
+				for (File filenames : incompleteFiles) {
+					filenames.delete();
+				}
+				facetInput.close();
+
 			}
 		}
 
@@ -384,7 +385,7 @@ public class TranslateMap {
 				s = stdInput.readLine();
 				String s2;
 				if (s == null) {
-					System.out.println("Failed : ");
+//					System.out.println("Failed : ");
 				}
 			}
 			if (fs.exists(hadoopSrcPath1)) {
@@ -404,9 +405,9 @@ public class TranslateMap {
 						new InputStreamReader(p.getErrorStream()));
 				s = stdInput.readLine();
 				String s2;
-				System.out.println(s);
+//				System.out.println(s);
 				if (s == null) {
-					System.out.println("Failed : ");
+//					System.out.println("Failed : ");
 				}
 			}
 		}
