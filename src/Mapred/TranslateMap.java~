@@ -3,12 +3,10 @@ package Mapred;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -35,14 +33,11 @@ public class TranslateMap {
 	private static boolean clearAll;
 
 	private static File lastFile;
-	
-	private static File lastSuccessfulFile;
 
 	public static void main(String... args) throws Exception {
 		BufferedReader facetInput = new BufferedReader(new FileReader("Facets"));
 		// System.out.println(args[0]);
-		
-		lastSuccessfulFile = new File("successfulFile");
+
 		if (args[0].equals("True")) {
 			clearAll = true;
 		}
@@ -92,13 +87,11 @@ public class TranslateMap {
 		File createdDir = new File(dir.toString() + "/create");
 		if (!createdDir.exists())
 			if (!createdDir.mkdir()) {
-				System.out.println("Directory Creation failed");
+//				System.out.println("Directory Creation failed");
 				System.exit(-1);
 			}
 		File[] rootFiles = dir.listFiles();
 		File[] incompleteFiles = createdDir.listFiles();
-		
-		
 
 		if (incompleteFiles.length != 0) {
 //			System.out.println("Deleting Files in create");
@@ -106,12 +99,6 @@ public class TranslateMap {
 			lastFile = incompleteFiles[0];
 			for (File filename : incompleteFiles) {
 				filename.delete();
-			}
-		}
-		else{
-			if(lastSuccessfulFile.exists()){
-				BufferedReader bF= new BufferedReader(new FileReader(lastSuccessfulFile));
-				lastFile = new File(bF.readLine());
 			}
 		}
 
@@ -130,21 +117,18 @@ public class TranslateMap {
 			}
 		}
 		if (!clearAll) {
-			File tempFile=null;
 			try {
 				int x = 0;
-				System.out.println(rootFiles.length + ":Length");
+//				System.out.println(rootFiles.length + ":Length");
 				File outputFile = new File("Merged_Custom_Tag.xml");
 				OutputStream outputStream = new BufferedOutputStream(
 						new FileOutputStream(outputFile));
 				boolean skipped = false;
-				
 				for (File filename : rootFiles) {
-					tempFile = filename;
 					if(!skipped)
 					if (lastFile != null) {
 //						System.out.println("Skipping Files");
-						System.out.println(lastFile.getName());
+//						System.out.println(lastFile.getName());
 //						System.out.println(filename.getName());
 						if (Long.parseLong(lastFile.getName().split("\\.")[0]) > Long.parseLong(filename.getName().split("\\.")[0])) {
 							continue;
@@ -167,14 +151,6 @@ public class TranslateMap {
 						for (File filenames : incompleteFiles) {
 							filenames.delete();
 						}
-						
-						if(lastSuccessfulFile.exists())
-							lastSuccessfulFile.delete();
-						lastSuccessfulFile.createNewFile();
-						BufferedWriter bW = new BufferedWriter(new FileWriter(lastSuccessfulFile));
-						bW.write(filename.getName());
-						bW.close();
-						
 						mapReduceDone = false;
 						
 
@@ -196,7 +172,7 @@ public class TranslateMap {
 
 					x++;
 					// if(x==750000){
-					if (outputFile.length() / (1024 * 1024 ) >= 64) {
+					if (outputFile.length() / (1024 * 1024 ) >= 100) {
 						IOUtils.write("</Custom>", outputStream);
 						outputStream.close();
 						if (part0.exists()) {
@@ -334,12 +310,6 @@ public class TranslateMap {
 					filenames.delete();
 				}
 				facetInput.close();
-				if(lastSuccessfulFile.exists())
-					lastSuccessfulFile.delete();
-				lastSuccessfulFile.createNewFile();
-				BufferedWriter bW = new BufferedWriter(new FileWriter(lastSuccessfulFile));
-				bW.write(tempFile.getName());
-				bW.close();
 
 			}
 		}
@@ -362,8 +332,8 @@ public class TranslateMap {
 		conf.set("parties", parties);
 		conf.set("people", people);
 		conf.set("hashTags", hashTags);
-//		conf.setLong("mapreduce.max.split.size", 67108864);
-		conf.setLong("mapreduce.input.fileinputformat.split.maxsize", (67108864/2));
+		conf.setLong("mapreduce.max.split.size", 67108864);
+		conf.setLong("mapreduce.input.fileinputformat.split.maxsize", 67108864);
 
 		FileSystem fs = FileSystem.get(conf);
 		Path localFilePath = new Path(localFile);
@@ -380,7 +350,7 @@ public class TranslateMap {
 		// job.setCombinerClass(TranslateCombine.class);
 		job.setReducerClass(TranslateReducer.class);
 
-//		job.setNumReduceTasks(1);
+		job.setNumReduceTasks(1);
 
 		job.setInputFormatClass(XmlInputFormatCombine.class);
 		job.setOutputFormatClass(TextOutputFormat.class);
