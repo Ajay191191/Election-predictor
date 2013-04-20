@@ -140,6 +140,8 @@ public class TranslateMap {
 				boolean skipped = false;
 				
 				for (File filename : rootFiles) {
+					if(filename.isDirectory())
+						continue;
 					tempFile = filename;
 					if(!skipped)
 					if (lastFile != null) {
@@ -155,8 +157,9 @@ public class TranslateMap {
 							lastFile=null;
 						}
 					}
-
+					
 					FileUtils.copyFileToDirectory(filename, createdDir);
+//					FileUtils.copyFileToDirectory(filename, createdDir,true);
 
 					if (mapReduceDone) {
 						outputFile.delete();
@@ -196,7 +199,7 @@ public class TranslateMap {
 
 					x++;
 					// if(x==750000){
-					if (outputFile.length() / (1024 * 1024 ) >= 64) {
+					if (outputFile.length() / (1024 *1024 ) >= 16) {
 						IOUtils.write("</Custom>", outputStream);
 						outputStream.close();
 						if (part0.exists()) {
@@ -363,7 +366,7 @@ public class TranslateMap {
 		conf.set("people", people);
 		conf.set("hashTags", hashTags);
 //		conf.setLong("mapreduce.max.split.size", 67108864);
-		conf.setLong("mapreduce.input.fileinputformat.split.maxsize", (67108864/2));
+		conf.setLong("mapreduce.input.fileinputformat.split.maxsize", (67108864/8));
 
 		FileSystem fs = FileSystem.get(conf);
 		Path localFilePath = new Path(localFile);

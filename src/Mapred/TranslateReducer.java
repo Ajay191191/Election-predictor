@@ -232,14 +232,15 @@ public class TranslateReducer extends
 							found = true;
 						if (found) {
 							for (int j = 0; j < spl.length; j++) {
-								if (!spl[j].toLowerCase().equals("the")
-										|| spl[j].toLowerCase().equals("of")) {
+								if (!(spl[j].toLowerCase().equals("the")
+										|| spl[j].toLowerCase().equals("of"))) {
 									if (contains(parties, spl[j].toLowerCase())
 											&& TweetsRaw
 													.get(l)
 													.toLowerCase()
 													.contains(
 															spl[j].toLowerCase())) {
+										if(containsList(parties,matches[i].toLowerCase()))
 										Parties.add(matches[i]);
 									}
 									if (contains(people, spl[j].toLowerCase())
@@ -248,6 +249,8 @@ public class TranslateReducer extends
 													.toLowerCase()
 													.contains(
 															spl[j].toLowerCase())) {
+										
+										if(containsList(people,matches[i].toLowerCase()))
 										People.add(matches[i]);
 										Peopleadded = true;
 									}
@@ -257,6 +260,7 @@ public class TranslateReducer extends
 													.toLowerCase()
 													.contains(
 															spl[j].toLowerCase())) {
+										if(containsList(hashTags,matches[i].toLowerCase()))
 										HashTags.add(matches[i]);
 										HashTagadded = true;
 									}
@@ -414,9 +418,20 @@ public class TranslateReducer extends
 
 	boolean contains(List<String> list, String word) {
 		for (String s : list) {
-			if (s.contains(word))
-				return true;
+			String splits[] = s.split(" ");
+			for(String sp:splits){
+				if(sp.equals(word))
+					return true;
+			}
 		}
+		return false;
+	}
+	
+	static boolean containsList(List<String> list, String word) {
+		for (String s : list) {
+				if(s.toLowerCase().trim().equals(word))
+					return true;
+			}
 		return false;
 	}
 

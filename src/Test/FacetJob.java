@@ -2,21 +2,69 @@ package Test;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class FacetJob {
 
 	public static void main(String[] args) throws IOException {
-		BufferedReader facetInput = new BufferedReader(new FileReader("Facets"));
+		BufferedReader facetInput = new BufferedReader(new FileReader("/home/hduser/Facets"));
+		// System.out.println(args[0]);
+		
 		String line = facetInput.readLine();
-        while (line != null) {
-        		  //System.out.println(line + " Trimmed:"+ line.replaceAll(" ", ""));
-        		  String matches = line + "\n"+ line.replaceAll(" ", "");
-        		  String mat[] = matches.split("\n");
-        		  for(int i=0;i<mat.length;i++){
-        			  System.out.println(mat[i]);
-        		  }
-                  line = facetInput.readLine();
-        }
+		int num = 1;
+		List<String> search = new ArrayList<String>();
+		List<String> parties =new ArrayList<String>();
+		boolean partyEnd = true;
+		List<String> people = new ArrayList<String>();
+		boolean peopleEnd = true;
+		List<String> hashTags = new ArrayList<String>();
+		boolean hashtagEnd = true;
+		while (line != null) {
+			if (line.equals("Parties")) {
+				partyEnd = false;
+				line = facetInput.readLine();
+				continue;
+			}
+			if (line.equals("People")) {
+				peopleEnd = false;
+				partyEnd = true;
+				line = facetInput.readLine();
+				continue;
+			}
+			if (line.equals("Hashtag")) {
+				hashtagEnd = false;
+				peopleEnd = true;
+				partyEnd = true;
+				line = facetInput.readLine();
+				continue;
+			}
+			if (!partyEnd) {
+				parties.add(line + "\n");
+			} else if (!peopleEnd) {
+				people .add(line + "\n");
+			} else if (!hashtagEnd) {
+				hashTags .add( line + "\n");
+			}
+			// System.out.println(line + " Trimmed:"+ line.replaceAll(" ", ""));
+			search .add(line + "\n");
+			line = facetInput.readLine();
+		}
+		
+		System.out.println("Parties : " + parties);
+		System.out.println("People : " + people);
+		System.out.println("HashTags : " + hashTags);
+		
+		System.out.println(contains(people,("Silvio berlusconi").toLowerCase()));
+		
+	}
+	
+	static boolean contains(List<String> list, String word) {
+		for (String s : list) {
+				if(s.toLowerCase().trim().equals(word))
+					return true;
+			}
+		return false;
 	}
 }
