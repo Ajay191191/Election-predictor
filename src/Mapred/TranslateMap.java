@@ -55,6 +55,8 @@ public class TranslateMap {
 		boolean peopleEnd = true;
 		String hashTags = new String();
 		boolean hashtagEnd = true;
+		String translations = new String();
+		boolean translationsEnd = true;
 		while (line != null) {
 			if (line.equals("Parties")) {
 				partyEnd = false;
@@ -74,12 +76,22 @@ public class TranslateMap {
 				line = facetInput.readLine();
 				continue;
 			}
+			if(line.equals("Translations")){
+				hashtagEnd = true;
+				peopleEnd = true;
+				partyEnd = true;
+				translationsEnd = false;
+				line = facetInput.readLine();
+				continue;
+			}
 			if (!partyEnd) {
 				parties += line + "\n";
 			} else if (!peopleEnd) {
 				people += line + "\n";
 			} else if (!hashtagEnd) {
 				hashTags += line + "\n";
+			} else if(!translationsEnd){
+				translations += line + "\n";
 			}
 			// System.out.println(line + " Trimmed:"+ line.replaceAll(" ", ""));
 			search += line + "\n";
@@ -199,7 +211,7 @@ public class TranslateMap {
 
 					x++;
 					// if(x==750000){
-					if (outputFile.length() / (1024 *1024 ) >= 16) {
+					if (outputFile.length() / (1024 * 1024 ) >= 16) {
 						IOUtils.write("</Custom>", outputStream);
 						outputStream.close();
 						if (part0.exists()) {
@@ -243,7 +255,7 @@ public class TranslateMap {
 							outStream.close();
 						}
 						runJob("Tweets_custom", "outputCustom", "<Custom>",
-								"</Custom>", search, parties, people, hashTags,
+								"</Custom>", search, parties, people, hashTags,translations,
 								"Merged_Custom_Tag.xml");
 						jobNo++;
 						mapReduceDone = true;
@@ -288,7 +300,7 @@ public class TranslateMap {
 					outStream.close();
 				}
 				runJob("Tweets_custom", "outputCustom", "<Custom>",
-						"</Custom>", search, parties, people, hashTags,
+						"</Custom>", search, parties, people, hashTags,translations,
 						"Merged_Custom_Tag.xml");
 
 			} catch (Exception e) {
@@ -354,7 +366,7 @@ public class TranslateMap {
 
 	public static void runJob(String input, String output, String start,
 			String end, String el, String parties, String people,
-			String hashTags, String localFile) throws Exception {
+			String hashTags,String translations, String localFile) throws Exception {
 		Configuration conf = new Configuration();
 		conf.set("key.value.separator.in.input.line", " ");
 		// conf.set("xmlinput.start", "<text type=\"string\">");
@@ -365,6 +377,7 @@ public class TranslateMap {
 		conf.set("parties", parties);
 		conf.set("people", people);
 		conf.set("hashTags", hashTags);
+		conf.set("translations",translations);
 //		conf.setLong("mapreduce.max.split.size", 67108864);
 		conf.setLong("mapreduce.input.fileinputformat.split.maxsize", (67108864/8));
 
