@@ -35,13 +35,13 @@ public class TranslateMap {
 	private static boolean clearAll;
 
 	private static File lastFile;
-	
+
 	private static File lastSuccessfulFile;
 
 	public static void main(String... args) throws Exception {
 		BufferedReader facetInput = new BufferedReader(new FileReader("Facets"));
 		// System.out.println(args[0]);
-		
+
 		lastSuccessfulFile = new File("successfulFile");
 		if (args[0].equals("True")) {
 			clearAll = true;
@@ -76,7 +76,7 @@ public class TranslateMap {
 				line = facetInput.readLine();
 				continue;
 			}
-			if(line.equals("Translations")){
+			if (line.equals("Translations")) {
 				hashtagEnd = true;
 				peopleEnd = true;
 				partyEnd = true;
@@ -90,7 +90,7 @@ public class TranslateMap {
 				people += line + "\n";
 			} else if (!hashtagEnd) {
 				hashTags += line + "\n";
-			} else if(!translationsEnd){
+			} else if (!translationsEnd) {
 				translations += line + "\n";
 			}
 			// System.out.println(line + " Trimmed:"+ line.replaceAll(" ", ""));
@@ -98,6 +98,20 @@ public class TranslateMap {
 			line = facetInput.readLine();
 		}
 
+		// Job No
+
+		File outputDir = new File("/home/ajay/Project/New");
+		File outputFiles[] = outputDir.listFiles();
+
+		if (outputFiles.length != 1) {
+			for (File s : outputFiles) {
+				if (s.isDirectory())
+					continue;
+				if (jobNo < Integer.parseInt(s.getName().split("-")[1]))
+					jobNo = Integer.parseInt(s.getName().split("-")[1]);
+			}
+		}
+		jobNo ++;
 		// Concat Files :
 
 		File dir = new File("/home/ajay/Project/Tweets");
@@ -109,20 +123,18 @@ public class TranslateMap {
 			}
 		File[] rootFiles = dir.listFiles();
 		File[] incompleteFiles = createdDir.listFiles();
-		
-		
 
 		if (incompleteFiles.length != 0) {
-//			System.out.println("Deleting Files in create");
+			// System.out.println("Deleting Files in create");
 			Arrays.sort(incompleteFiles, NameFileComparator.NAME_COMPARATOR);
 			lastFile = incompleteFiles[0];
 			for (File filename : incompleteFiles) {
 				filename.delete();
 			}
-		}
-		else{
-			if(lastSuccessfulFile.exists()){
-				BufferedReader bF= new BufferedReader(new FileReader(lastSuccessfulFile));
+		} else {
+			if (lastSuccessfulFile.exists()) {
+				BufferedReader bF = new BufferedReader(new FileReader(
+						lastSuccessfulFile));
 				lastFile = new File(bF.readLine());
 			}
 		}
@@ -142,7 +154,7 @@ public class TranslateMap {
 			}
 		}
 		if (!clearAll) {
-			File tempFile=null;
+			File tempFile = null;
 			try {
 				int x = 0;
 				System.out.println(rootFiles.length + ":Length");
@@ -150,28 +162,27 @@ public class TranslateMap {
 				OutputStream outputStream = new BufferedOutputStream(
 						new FileOutputStream(outputFile));
 				boolean skipped = false;
-				
+
 				for (File filename : rootFiles) {
-					if(filename.isDirectory())
+					if (filename.isDirectory())
 						continue;
 					tempFile = filename;
-					if(!skipped)
-					if (lastFile != null) {
-//						System.out.println("Skipping Files");
-						System.out.println(lastFile.getName());
-//						System.out.println(filename.getName());
-						if (Long.parseLong(lastFile.getName().split("\\.")[0]) > Long.parseLong(filename.getName().split("\\.")[0])) {
-							continue;
+					if (!skipped)
+						if (lastFile != null) {
+							// System.out.println("Skipping Files");
+							System.out.println(lastFile.getName());
+							// System.out.println(filename.getName());
+							if (Long.parseLong(lastFile.getName().split("\\.")[0]) > Long
+									.parseLong(filename.getName().split("\\.")[0])) {
+								continue;
+							} else {
+								skipped = true;
+								lastFile = null;
+							}
 						}
-						else
-						{
-							skipped=true;
-							lastFile=null;
-						}
-					}
-					
+
 					FileUtils.copyFileToDirectory(filename, createdDir);
-//					FileUtils.copyFileToDirectory(filename, createdDir,true);
+					// FileUtils.copyFileToDirectory(filename, createdDir,true);
 
 					if (mapReduceDone) {
 						outputFile.delete();
@@ -182,16 +193,16 @@ public class TranslateMap {
 						for (File filenames : incompleteFiles) {
 							filenames.delete();
 						}
-						
-						if(lastSuccessfulFile.exists())
+
+						if (lastSuccessfulFile.exists())
 							lastSuccessfulFile.delete();
 						lastSuccessfulFile.createNewFile();
-						BufferedWriter bW = new BufferedWriter(new FileWriter(lastSuccessfulFile));
+						BufferedWriter bW = new BufferedWriter(new FileWriter(
+								lastSuccessfulFile));
 						bW.write(filename.getName());
 						bW.close();
-						
+
 						mapReduceDone = false;
-						
 
 					}
 
@@ -211,7 +222,7 @@ public class TranslateMap {
 
 					x++;
 					// if(x==750000){
-					if (outputFile.length() / (1024 * 1024 ) >= 16) {
+					if (outputFile.length() / (1024 * 1024) >= 16) {
 						IOUtils.write("</Custom>", outputStream);
 						outputStream.close();
 						if (part0.exists()) {
@@ -255,8 +266,8 @@ public class TranslateMap {
 							outStream.close();
 						}
 						runJob("Tweets_custom", "outputCustom", "<Custom>",
-								"</Custom>", search, parties, people, hashTags,translations,
-								"Merged_Custom_Tag.xml");
+								"</Custom>", search, parties, people, hashTags,
+								translations, "Merged_Custom_Tag.xml");
 						jobNo++;
 						mapReduceDone = true;
 					}
@@ -300,8 +311,8 @@ public class TranslateMap {
 					outStream.close();
 				}
 				runJob("Tweets_custom", "outputCustom", "<Custom>",
-						"</Custom>", search, parties, people, hashTags,translations,
-						"Merged_Custom_Tag.xml");
+						"</Custom>", search, parties, people, hashTags,
+						translations, "Merged_Custom_Tag.xml");
 
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -349,10 +360,11 @@ public class TranslateMap {
 					filenames.delete();
 				}
 				facetInput.close();
-				if(lastSuccessfulFile.exists())
+				if (lastSuccessfulFile.exists())
 					lastSuccessfulFile.delete();
 				lastSuccessfulFile.createNewFile();
-				BufferedWriter bW = new BufferedWriter(new FileWriter(lastSuccessfulFile));
+				BufferedWriter bW = new BufferedWriter(new FileWriter(
+						lastSuccessfulFile));
 				bW.write(tempFile.getName());
 				bW.close();
 
@@ -366,7 +378,8 @@ public class TranslateMap {
 
 	public static void runJob(String input, String output, String start,
 			String end, String el, String parties, String people,
-			String hashTags,String translations, String localFile) throws Exception {
+			String hashTags, String translations, String localFile)
+			throws Exception {
 		Configuration conf = new Configuration();
 		conf.set("key.value.separator.in.input.line", " ");
 		// conf.set("xmlinput.start", "<text type=\"string\">");
@@ -377,9 +390,10 @@ public class TranslateMap {
 		conf.set("parties", parties);
 		conf.set("people", people);
 		conf.set("hashTags", hashTags);
-		conf.set("translations",translations);
-//		conf.setLong("mapreduce.max.split.size", 67108864);
-		conf.setLong("mapreduce.input.fileinputformat.split.maxsize", (67108864/8));
+		conf.set("translations", translations);
+		// conf.setLong("mapreduce.max.split.size", 67108864);
+		conf.setLong("mapreduce.input.fileinputformat.split.maxsize",
+				(67108864 / 8));
 
 		FileSystem fs = FileSystem.get(conf);
 		Path localFilePath = new Path(localFile);
@@ -396,7 +410,7 @@ public class TranslateMap {
 		// job.setCombinerClass(TranslateCombine.class);
 		job.setReducerClass(TranslateReducer.class);
 
-//		job.setNumReduceTasks(1);
+		// job.setNumReduceTasks(1);
 
 		job.setInputFormatClass(XmlInputFormatCombine.class);
 		job.setOutputFormatClass(TextOutputFormat.class);
@@ -431,7 +445,7 @@ public class TranslateMap {
 				s = stdInput.readLine();
 				String s2;
 				if (s == null) {
-//					System.out.println("Failed : ");
+					// System.out.println("Failed : ");
 				}
 			}
 			if (fs.exists(hadoopSrcPath1)) {
@@ -451,9 +465,9 @@ public class TranslateMap {
 						new InputStreamReader(p.getErrorStream()));
 				s = stdInput.readLine();
 				String s2;
-//				System.out.println(s);
+				// System.out.println(s);
 				if (s == null) {
-//					System.out.println("Failed : ");
+					// System.out.println("Failed : ");
 				}
 			}
 		}

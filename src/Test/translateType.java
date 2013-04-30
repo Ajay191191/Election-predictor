@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -13,6 +14,7 @@ import java.util.regex.Pattern;
 
 import javax.xml.xpath.XPathExpressionException;
 
+import org.apache.commons.io.comparator.NameFileComparator;
 import org.apache.http.HeaderElement;
 import org.apache.http.HeaderElementIterator;
 import org.apache.http.HttpHost;
@@ -222,11 +224,22 @@ public class translateType {
 //		}
 //		
 //		
-		File filename = new File("303059527211823104.xml-done");
-		String[] split = filename.toString().split("\\.");
-		for(String s: split){
-			System.out.println(s);
+		File filename = new File("/home/ajay/Project/New");
+//		String[] split = filename.toString().split("\\.");
+//		for(String s: split){
+//			System.out.println(s);
+//		}
+		File files[] = filename.listFiles();
+//		Arrays.sort(files, NameFileComparator.NAME_REVERSE);
+		int lastJob=0 ;
+		for(File s:files){
+			if(s.isDirectory())
+				continue;
+			if(lastJob < Integer.parseInt(s.getName().split("-")[1]))
+			lastJob = Integer.parseInt(s.getName().split("-")[1]);
 		}
+		lastJob++;
+		System.out.println(lastJob);
 		
 		
 	}
